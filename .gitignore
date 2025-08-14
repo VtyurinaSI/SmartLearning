@@ -9,3 +9,8 @@
 /OrchestrPatterns.Domain/obj
 /OrchestrPatterns.Domain.Tests/bin/Debug/net8.0
 /OrchestrPatterns.Domain.Tests/obj
+/Orchestrator/OrchestrPatterns.Domain/obj/Debug/net8.0
+/Orchestrator/OrchestrPatterns.Application/obj
+/Orchestrator/OrchestrPatterns.Domain/obj
+/Orchestrator/OrchestrPatterns.Domain.Tests/bin/Debug/net8.0
+/Orchestrator/OrchestrPatterns.Domain.Tests/obj
