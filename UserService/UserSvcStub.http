@@ -1,0 +1,6 @@
+@UserSvcStub_HostAddress = http://localhost:5193
+
+GET {{UserSvcStub_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
