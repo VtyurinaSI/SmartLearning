@@ -14,3 +14,5 @@
 /Orchestrator/OrchestrPatterns.Domain/obj
 /Orchestrator/OrchestrPatterns.Domain.Tests/bin/Debug/net8.0
 /Orchestrator/OrchestrPatterns.Domain.Tests/obj
+/LlmService/obj
+/LlmService/bin/Debug/net8.0
