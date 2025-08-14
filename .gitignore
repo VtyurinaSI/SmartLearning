@@ -1,0 +1,11 @@
+﻿################################################################################
+# Данный GITIGNORE-файл был автоматически создан Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/SmartLearning
+/OrchestrPatterns.Application/bin/Debug/net8.0
+/OrchestrPatterns.Application/obj
+/OrchestrPatterns.Domain/bin/Debug/net8.0
+/OrchestrPatterns.Domain/obj
+/OrchestrPatterns.Domain.Tests/bin/Debug/net8.0
+/OrchestrPatterns.Domain.Tests/obj
