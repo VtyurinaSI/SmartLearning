@@ -16,3 +16,5 @@
 /Orchestrator/OrchestrPatterns.Domain.Tests/obj
 /LlmService/obj
 /LlmService/bin/Debug/net8.0
+/.vs/ProjectEvaluation
+/AuthService/obj
