@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Orchestrator", "Orchestrator", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Application", "OrchestrPatterns.Application\OrchestrPatterns.Application.csproj", "{A6690780-F75D-B73E-3600-5D443B49C2A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Domain", "OrchestrPatterns.Domain\OrchestrPatterns.Domain.csproj", "{C5C9BEF1-7E00-28BF-F775-38A3BB9DA21C}"
@@ -36,5 +38,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A6690780-F75D-B73E-3600-5D443B49C2A2} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{C5C9BEF1-7E00-28BF-F775-38A3BB9DA21C} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{195E9D8A-F6CA-FD12-4F20-BA1472FF42CE} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 	EndGlobalSection
 EndGlobal
