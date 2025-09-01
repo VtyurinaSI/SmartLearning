@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
+using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Mvc;
+using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
 
 var builder = WebApplication.CreateBuilder();
@@ -12,6 +13,17 @@ builder.Services.AddHttpClient("compiler", c => c.BaseAddress = new Uri(
 builder.Services.AddHttpClient("checker", c => c.BaseAddress = new Uri(
     Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
 builder.Services.AddHttpClient("reviewer", c => c.BaseAddress = new Uri("http://localhost:6003/"));
+builder.Services.AddMassTransit(x =>
+{
+    x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
+     .InMemoryRepository(); 
+
+    x.UsingRabbitMq((ctx, cfg) =>
+    {
+        cfg.Host("localhost", "/", h => { h.Username("guest"); h.Password("guest"); });
+        cfg.ConfigureEndpoints(ctx);
+    });
+});
 var app = builder.Build();
 
 app.UseSwagger();
