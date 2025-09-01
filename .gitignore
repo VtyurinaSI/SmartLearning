@@ -21,3 +21,6 @@
 /AuthService/bin/Debug/net8.0
 /.vs
 /SmartLearning.Contracts/obj
+/Orchestrator/OrchestrPatterns.Application/bin/Debug/net8.0
+/Orchestrator/OrchestrPatterns.Domain/bin/Debug/net8.0
+/SmartLearning.Contracts/bin/Debug/net8.0
