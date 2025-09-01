@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserSvcStub", "UserService\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Contracts.csproj", "{14A53AA3-4261-4DC6-AE5A-3F69457C4A5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator.States", "Orchestrator.States\Orchestrator.States.csproj", "{99794CB4-0013-4891-B6CB-6787128145EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{14A53AA3-4261-4DC6-AE5A-3F69457C4A5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14A53AA3-4261-4DC6-AE5A-3F69457C4A5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14A53AA3-4261-4DC6-AE5A-3F69457C4A5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99794CB4-0013-4891-B6CB-6787128145EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99794CB4-0013-4891-B6CB-6787128145EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99794CB4-0013-4891-B6CB-6787128145EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99794CB4-0013-4891-B6CB-6787128145EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +73,7 @@ Global
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{D06D686E-871A-2153-E55B-C8C388376455} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{99794CB4-0013-4891-B6CB-6787128145EB} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB1BD21-B62E-4119-AF65-3459797D67F8}

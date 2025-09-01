@@ -11,12 +11,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("Contracts")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("Orchestrator.States")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e17100943a85d45f9aba517f11ab254a692d2026")]
-[assembly: System.Reflection.AssemblyProductAttribute("Contracts")]
-[assembly: System.Reflection.AssemblyTitleAttribute("Contracts")]
+[assembly: System.Reflection.AssemblyProductAttribute("Orchestrator.States")]
+[assembly: System.Reflection.AssemblyTitleAttribute("Orchestrator.States")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Создано классом WriteCodeFragment MSBuild.
