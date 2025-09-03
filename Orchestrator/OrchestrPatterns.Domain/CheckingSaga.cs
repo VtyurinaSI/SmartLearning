@@ -12,5 +12,6 @@ namespace OrchestrPatterns.Domain
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
+        public Guid? ReviewTimeoutTokenId { get; set; }
     }
 }

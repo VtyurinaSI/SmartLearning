@@ -6,7 +6,7 @@ namespace OrchestrPatterns.Application;
 
 public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 {
-    
+
     public State Created { get; private set; } = default!;
     public State Compiling { get; private set; } = default!;
     public State Compiled { get; private set; } = default!;
@@ -18,7 +18,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
     public State Failed { get; private set; } = default!;
     public State Passed { get; private set; } = default!;
 
-    
+
     public Event<StartCompile> StartCompileEvent { get; private set; } = default!;
     public Event<StartTests> StartTestsEvent { get; private set; } = default!;
     public Event<StartReview> StartReviewEvent { get; private set; } = default!;
@@ -34,19 +34,20 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
     public Event<ReviewFinished> ReviewFinishedEvent { get; private set; } = default!;
     public Event<ReviewFailed> ReviewFailedEvent { get; private set; } = default!;
-    public Event<ReviewTimeout> ReviewTimeoutEvent { get; private set; } = default!;
-
-    public Event<Finalize> FinalizeEvent { get; private set; } = default!;
-
+    public Schedule<CheckingSaga, ReviewTimeout> ReviewTmo { get; private set; } = default!;
     public CheckingStateMachineMt()
     {
         InstanceState(x => x.CurrentState);
+        Schedule(() => ReviewTmo, x => x.ReviewTimeoutTokenId, s =>
+        {
+            s.Delay = TimeSpan.FromMinutes(10);
+            s.Received = r => r.CorrelateById(m => m.Message.CorrelationId);
+        });
 
-        
         Event(() => StartCompileEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
         Event(() => StartTestsEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
         Event(() => StartReviewEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
-        Event(() => CancelEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
+        Event(() => CancelEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
         Event(() => CodeCompiledEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
         Event(() => CompilationFailedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
@@ -58,11 +59,8 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         Event(() => ReviewFinishedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
         Event(() => ReviewFailedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
-        Event(() => ReviewTimeoutEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
-        Event(() => FinalizeEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
-        
         Initially(
             When(StartCompileEvent)
                 .Then(SetCreated)
@@ -74,14 +72,11 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
             When(StartReviewEvent)
                 .Then(SetCreated)
-                .TransitionTo(Reviewing).Then(SetReviewing),
+                .TransitionTo(Reviewing).Then(SetReviewing)
 
-            When(CancelEvent)
-                .Then(SetCreated)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+
         During(Created,
             When(StartCompileEvent)
                 .TransitionTo(Compiling).Then(SetCompiling),
@@ -90,30 +85,19 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
                 .TransitionTo(Testing).Then(SetTesting),
 
             When(StartReviewEvent)
-                .TransitionTo(Reviewing).Then(SetReviewing),
+                .TransitionTo(Reviewing).Then(SetReviewing)
 
-            When(CancelEvent)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-       
+
         During(Compiling,
-            Ignore(StartCompileEvent), 
+            Ignore(StartCompileEvent),
 
             When(CodeCompiledEvent)
-                .TransitionTo(Compiled).Then(SetCompiled),
-
-            When(CompilationFailedEvent)
-                .TransitionTo(Failed).Then(SetFailed).Finalize(),
-
-            When(CompileTimeoutEvent)
-                .TransitionTo(Failed).Then(SetFailed).Finalize(),
-
-            When(CancelEvent)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
+                .TransitionTo(Compiled).Then(SetCompiled)
         );
 
-        
+
         During(Compiled,
             When(StartTestsEvent)
                 .TransitionTo(Testing).Then(SetTesting),
@@ -121,14 +105,11 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
             When(StartReviewEvent)
                 .TransitionTo(Reviewing).Then(SetReviewing),
 
-            When(FinalizeEvent)
-                .TransitionTo(Passed).Then(SetPassed).Finalize(),
-
             When(CancelEvent)
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+
         During(Testing,
             Ignore(StartTestsEvent),
 
@@ -145,60 +126,63 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+
         During(Tested,
             When(StartReviewEvent)
                 .TransitionTo(Reviewing).Then(SetReviewing),
 
-            When(FinalizeEvent)
-                .TransitionTo(Passed).Then(SetPassed).Finalize(),
 
             When(CancelEvent)
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+        WhenEnter(Reviewing, x => x
+    .ThenAsync(ctx => ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId)))
+    .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId))
+);
+
         During(Reviewing,
             Ignore(StartReviewEvent),
-
             When(ReviewFinishedEvent)
+                .Unschedule(ReviewTmo)
                 .TransitionTo(Reviewed).Then(SetReviewed),
 
             When(ReviewFailedEvent)
+                .Unschedule(ReviewTmo)
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
-            When(ReviewTimeoutEvent)
+            When(ReviewTmo.Received)
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(CancelEvent)
+                .Unschedule(ReviewTmo)
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+
         During(Reviewed,
-            When(FinalizeEvent)
-                .TransitionTo(Passed).Then(SetPassed).Finalize(),
-
             When(CancelEvent)
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
-        
+
         During(Canceled, Ignore(CancelEvent));
-        During(Failed, Ignore(FinalizeEvent), Ignore(CancelEvent));
-        During(Passed, Ignore(FinalizeEvent), Ignore(CancelEvent));
 
         SetCompletedWhenFinalized();
     }
 
- 
+
     static void SetCreated(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Created;
     static void SetCompiling(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Compiling;
     static void SetCompiled(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Compiled;
     static void SetTesting(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Testing;
     static void SetTested(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Tested;
     static void SetReviewing(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Reviewing;
-    static void SetReviewed(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Reviewed;
+    static void SetReviewed(BehaviorContext<CheckingSaga> ctx)
+    {
+        ctx.Saga.Status = CheckingStatus.Reviewed;
+        ctx.Saga.CompletedAt ??= DateTime.UtcNow;
+    }
     static void SetCanceled(BehaviorContext<CheckingSaga> ctx)
     {
         ctx.Saga.Status = CheckingStatus.Canceled;

@@ -5,7 +5,7 @@
     public record StartReview(Guid CorrelationId);
     public record Cancel(Guid CorrelationId);
 
-   
+    public record ReviewRequested(Guid CorrelationId);
     public record CodeCompiled(Guid CorrelationId);
     public record CompilationFailed(Guid CorrelationId);
     public record CompileTimeout(Guid CorrelationId);
@@ -18,6 +18,5 @@
     public record ReviewFailed(Guid CorrelationId);
     public record ReviewTimeout(Guid CorrelationId);
 
-    
     public record Finalize(Guid CorrelationId);
 }
