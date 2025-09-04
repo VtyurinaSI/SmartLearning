@@ -27,8 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
     <ProjectReference Include="..\GatewayPatterns.Infrastructure\GatewayPatterns.Infrastructure.csproj" />
-    <ProjectReference Include="..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
   </ItemGroup>
-
 </Project>

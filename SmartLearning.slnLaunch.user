@@ -3,12 +3,12 @@
     "Name": "Новый профиль",
     "Projects": [
       {
-        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
         "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "Gateway\\GatewayPatterns\\GatewayPatterns.csproj",
+        "Action": "Start"
       }
     ]
   }
