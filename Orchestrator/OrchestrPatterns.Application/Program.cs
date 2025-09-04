@@ -5,7 +5,8 @@ using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
 using Quartz;
 using SmartLearning.Contracts;
-using System.Diagnostics;
+using GatewayPatterns.Infrastructure;
+using OrchestrPatterns.Application.Consumers;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -27,8 +28,15 @@ builder.Services.AddQuartz(q =>
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 
+builder.Services.AddSingleton<CompletionHub>();
+
+builder.Services.AddObjectStorage(builder.Configuration);
+
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<ReviewFinishedConsumer>();
+    x.AddConsumer<ReviewFailedConsumer>();
+
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
@@ -72,18 +80,28 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapPost("/mq", async (IBus bus, StartMqDto dto) =>
+app.MapPost("/mq", async (IBus bus,
+                          CompletionHub hub,
+                          GatewayPatterns.Infrastructure.IObjectStorageRepository repo,
+                          StartMqDto dto,
+                          CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
     if (dto.SkipCompile && dto.SkipTests)
-        await bus.Publish(new StartReview(id));
+        await bus.Publish(new StartReview(id), ct);
     else if (dto.SkipCompile)
-        await bus.Publish(new StartTests(id));
+        await bus.Publish(new StartTests(id), ct);
     else
-        await bus.Publish(new StartCompile(id));
+        await bus.Publish(new StartCompile(id), ct);
 
-    return Results.Accepted($"/checking/{id}", new { id });
+    // ждём ReviewFinished/ReviewFailed из LlmService
+    var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(5), ct);
+    if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
+
+    // читаем сохранённый результат LLM и возвращаем гейту
+    var review = await repo.ReadReviewAsync(id, ct);
+    return review is null ? Results.NoContent() : Results.Ok(review);
 });
 
 app.Run();
