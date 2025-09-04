@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Text;
+using GatewayPatterns.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,7 @@ builder.Host.UseSerilog((ctx, lc) =>
     .WriteTo.Console(
         theme: AnsiConsoleTheme.Sixteen,
         outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
-
+builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck("gateway_self", () => HealthCheckResult.Healthy("OK"))
     .AddUrlGroup(new Uri($"{builder.Configuration["Downstream:Users"]}health/ready"), name: "users_svc")
@@ -88,7 +89,7 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 
 api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, CancellationToken ct) =>
 {
-    using var resp = await llm.ChatAsync(content, ct);  
+    using var resp = await llm.ChatAsync(content, ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту (LlmService)");
 
@@ -98,12 +99,19 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор");*/
 
-api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
+//api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
+//{
+//    using var resp = await orc.ChatAsyncMq(content, ct);
+//    return await Proxy(resp, ct);
+//}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
+api.MapPost("/orc/mq/{msg}", async ([FromBody] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-    using var resp = await orc.ChatAsyncMq(content, ct);
+
+    if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
+    Guid checkingId = await repo.SaveSourceAsync(msg, ct);
+    using var resp = await orc.ChatAsyncMq(new StartMqDto(true, true, checkingId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
-
 app.MapHealthChecks("/health/ready");
 
 app.Run("http://localhost:5000/");

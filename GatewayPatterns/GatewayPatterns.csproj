@@ -23,9 +23,11 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="SavingObjects\" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GatewayPatterns.Infrastructure\GatewayPatterns.Infrastructure.csproj" />
     <ProjectReference Include="..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
   </ItemGroup>
 
