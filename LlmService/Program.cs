@@ -31,12 +31,12 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
-builder.Services.AddControllers();
-builder.Services.AddAuthorization();
+//builder.Services.AddControllers();
+//builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseSwagger();                
 app.UseSwaggerUI();
-app.UseAuthorization();
-app.MapControllers();
+//app.UseAuthorization();
+//app.MapControllers();
 app.Run("http://localhost:6003/");
