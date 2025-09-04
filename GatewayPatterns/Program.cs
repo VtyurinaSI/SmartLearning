@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Text;
@@ -15,7 +16,7 @@ builder.Services.AddHeaderPropagation(o =>
     o.Headers.Add("Authorization");
     o.Headers.Add("X-Correlation-Id");
 });
-
+builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 builder.Services.AddHttpClient<UsersApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"] ?? "http://localhost:6001/"))
     .AddHeaderPropagation();
@@ -28,7 +29,7 @@ builder.Services.AddHttpClient<LlmApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Llm"] ?? "http://localhost:6003/"))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<OrchApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"] ?? "http://localhost:6004/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"] ?? "http://localhost:6000/"))
     .AddHeaderPropagation();
 
 builder.Host.UseSerilog((ctx, lc) =>
@@ -96,6 +97,11 @@ api.MapPost("/workflows/llm/chat", async ([FromBody] string content, OrchApi orc
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор");
 
+api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
+{
+    using var resp = await orc.ChatAsyncMq(content, ct);
+    return await Proxy(resp, ct);
+}).WithSummary("Запрос через шину");
 
 app.MapHealthChecks("/health/ready");
 
@@ -107,3 +113,4 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
 public record ChatMessage(string role, string content);
+public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);

@@ -1,7 +1,6 @@
 using HealthChecks.UI.Client;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.DependencyInjection;
 using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
 using Quartz;
@@ -49,7 +48,7 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
-
+builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 var app = builder.Build();
 
 app.UseSwagger();
@@ -88,7 +87,7 @@ app.MapPost("/workflows", (WorkflowRequest req, IServiceProvider sp, Cancellatio
 
     return fsmRef.Status.ToString() + $". LLM: {router.LlmAnswer}";
 });
-
+app.MapGet("/", () => Results.Redirect("/swagger"));
 app.Run();
 
 public record WorkflowRequest(string Content);

@@ -7,11 +7,7 @@
         "Action": "Start"
       },
       {
-        "Path": "UserService\\UserSvcStub.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "LlmService\\LlmService.csproj",
+        "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
         "Action": "Start"
       }
     ]
