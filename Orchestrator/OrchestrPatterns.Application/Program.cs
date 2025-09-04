@@ -5,8 +5,8 @@ using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
 using Quartz;
 using SmartLearning.Contracts;
-using GatewayPatterns.Infrastructure;
 using OrchestrPatterns.Application.Consumers;
+using MinIoStub;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -82,7 +82,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 
 app.MapPost("/mq", async (IBus bus,
                           CompletionHub hub,
-                          GatewayPatterns.Infrastructure.IObjectStorageRepository repo,
+                          IObjectStorageRepository repo,
                           StartMqDto dto,
                           CancellationToken ct) =>
 {

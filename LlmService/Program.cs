@@ -1,7 +1,7 @@
 using LlmService;
 using MassTransit;
 using System.Net.Http.Headers;
-using GatewayPatterns.Infrastructure;
+using MinIoStub;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();

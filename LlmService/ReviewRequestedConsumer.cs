@@ -1,5 +1,5 @@
-﻿using GatewayPatterns.Infrastructure;
-using MassTransit;
+﻿using MassTransit;
+using MinIoStub;
 using SmartLearning.Contracts;
 using System.Text;
 using System.Text.Json;

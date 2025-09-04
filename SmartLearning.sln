@@ -17,11 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserSvcStub", "UserService\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLearning.Contracts", "SmartLearning.Contracts\SmartLearning.Contracts.csproj", "{A518198D-70CF-4ABB-A4D7-41D839F5B73E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{CFFC566E-CEFE-4166-9603-BE4A16F25D95}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "Gateway\GatewayPatterns\GatewayPatterns.csproj", "{3CFD893E-3113-9A31-F0A4-432A74685734}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns.Infrastructure", "Gateway\GatewayPatterns.Infrastructure\GatewayPatterns.Infrastructure.csproj", "{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinIoStub", "MinIoStub\MinIoStub.csproj", "{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,14 +51,14 @@ Global
 		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3CFD893E-3113-9A31-F0A4-432A74685734}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3CFD893E-3113-9A31-F0A4-432A74685734}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3CFD893E-3113-9A31-F0A4-432A74685734}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3CFD893E-3113-9A31-F0A4-432A74685734}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,8 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{D06D686E-871A-2153-E55B-C8C388376455} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
-		{3CFD893E-3113-9A31-F0A4-432A74685734} = {CFFC566E-CEFE-4166-9603-BE4A16F25D95}
-		{4C0A4BB0-C4F3-7E41-E6BA-E1F812332EAA} = {CFFC566E-CEFE-4166-9603-BE4A16F25D95}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB1BD21-B62E-4119-AF65-3459797D67F8}

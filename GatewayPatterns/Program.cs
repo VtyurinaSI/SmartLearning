@@ -4,7 +4,7 @@ using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Text;
-using GatewayPatterns.Infrastructure;
+using MinIoStub;
 
 var builder = WebApplication.CreateBuilder(args);
 
