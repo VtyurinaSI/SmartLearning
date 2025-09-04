@@ -95,11 +95,9 @@ app.MapPost("/mq", async (IBus bus,
     else
         await bus.Publish(new StartCompile(id), ct);
 
-    // ждём ReviewFinished/ReviewFailed из LlmService
-    var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(5), ct);
+    var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
 
-    // читаем сохранённый результат LLM и возвращаем гейту
     var review = await repo.ReadReviewAsync(id, ct);
     return review is null ? Results.NoContent() : Results.Ok(review);
 });
