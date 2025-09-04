@@ -5,12 +5,16 @@ using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
 using Quartz;
 using SmartLearning.Contracts;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder();
 
 builder.Services.AddHealthChecks();
+
+#if DEBUG
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+#endif
 
 builder.Services.AddHttpClient("compiler", c => c.BaseAddress =
     new Uri(Environment.GetEnvironmentVariable("COMPILER_URL") ?? "http://localhost:6006"));
@@ -51,8 +55,11 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 var app = builder.Build();
 
+#if DEBUG
 app.UseSwagger();
 app.UseSwaggerUI();
+app.MapGet("/", () => Results.Redirect("/swagger"));
+#endif
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
@@ -70,11 +77,11 @@ app.MapPost("/mq", async (IBus bus, StartDto dto) =>
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
     if (dto.SkipCompile && dto.SkipTests)
-        await bus.Publish(new StartReview(id)); 
+        await bus.Publish(new StartReview(id));
     else if (dto.SkipCompile)
-        await bus.Publish(new StartTests(id));  
+        await bus.Publish(new StartTests(id));
     else
-        await bus.Publish(new StartCompile(id)); 
+        await bus.Publish(new StartCompile(id));
 
     return Results.Accepted($"/checking/{id}", new { id });
 });
@@ -87,7 +94,7 @@ app.MapPost("/workflows", (WorkflowRequest req, IServiceProvider sp, Cancellatio
 
     return fsmRef.Status.ToString() + $". LLM: {router.LlmAnswer}";
 });
-app.MapGet("/", () => Results.Redirect("/swagger"));
+
 app.Run();
 
 public record WorkflowRequest(string Content);
