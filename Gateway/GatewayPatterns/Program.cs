@@ -104,14 +104,17 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
 //    using var resp = await orc.ChatAsyncMq(content, ct);
 //    return await Proxy(resp, ct);
 //}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
-api.MapPost("/orc/mq/{msg}", async ([FromBody] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
+api.MapPost("/orc/mq/{msg}", async ([FromRoute] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
 
     if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
     Guid checkingId = await repo.SaveSourceAsync(msg, ct);
     using var resp = await orc.ChatAsyncMq(new StartMqDto(true, true, checkingId), ct);
-    return await Proxy(resp, ct);
+    await Proxy(resp, ct);
+    var review = await repo.ReadReviewAsync(checkingId, ct);
+    return Results.Ok(review);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
+
 app.MapHealthChecks("/health/ready");
 
 app.Run("http://localhost:5000/");

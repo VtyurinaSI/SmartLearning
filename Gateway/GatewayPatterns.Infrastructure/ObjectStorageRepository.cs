@@ -4,7 +4,7 @@ using Npgsql;
 
 namespace GatewayPatterns.Infrastructure
 {
-    public class ObjectStorageRepository: IObjectStorageRepository
+    public class ObjectStorageRepository : IObjectStorageRepository
     {
         private readonly NpgsqlDataSource _ds;
         private readonly ILogger<ObjectStorageRepository> _log;
@@ -33,6 +33,19 @@ namespace GatewayPatterns.Infrastructure
 
             _log.LogInformation("Saved source. checking_id={CheckingId} user_id={UserId}", checkingId, userId);
             return checkingId;
+        }
+        public async Task<string?> ReadReviewAsync(Guid checkingId, CancellationToken ct)
+        {
+            const string sql = """
+            select review_res
+            from public.objectstorage
+            where checking_id = @CheckingId
+            """;
+
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+            return await conn.QuerySingleOrDefaultAsync<string?>(
+                new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
+
         }
     }
 }
