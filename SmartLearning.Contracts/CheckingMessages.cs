@@ -9,7 +9,7 @@
     public record CodeCompiled(Guid CorrelationId);
     public record CompilationFailed(Guid CorrelationId);
     public record CompileTimeout(Guid CorrelationId);
-
+    public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
     public record TestsFinished(Guid CorrelationId);
     public record TestsFailed(Guid CorrelationId);
     public record TestsTimeout(Guid CorrelationId);

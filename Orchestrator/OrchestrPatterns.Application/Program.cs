@@ -72,7 +72,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapPost("/mq", async (IBus bus, StartDto dto) =>
+app.MapPost("/mq", async (IBus bus, StartMqDto dto) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
@@ -98,4 +98,4 @@ app.MapPost("/workflows", (WorkflowRequest req, IServiceProvider sp, Cancellatio
 app.Run();
 
 public record WorkflowRequest(string Content);
-public record StartDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
+//public record StartDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);

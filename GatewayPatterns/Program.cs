@@ -3,6 +3,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
+using SmartLearning.Contracts;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -113,4 +114,3 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
 public record ChatMessage(string role, string content);
-public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);

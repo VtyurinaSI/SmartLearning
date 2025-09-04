@@ -1,4 +1,6 @@
-﻿internal class OrchApi
+﻿using SmartLearning.Contracts;
+
+internal class OrchApi
 {
     private readonly HttpClient _http;
     public OrchApi(HttpClient http) => _http = http;
