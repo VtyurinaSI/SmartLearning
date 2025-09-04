@@ -77,13 +77,13 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 })
 .WithSummary("Отправка команды в UserService // заглушка");
 
-api.MapGet("/patterns/{msg}", async ([FromRoute] string msg, PatternsApi patterns, CancellationToken ct) =>
+/*api.MapGet("/patterns/{msg}", async ([FromRoute] string msg, PatternsApi patterns, CancellationToken ct) =>
 {
     using var resp = await patterns.PingAsync(msg, ct);
     return await Proxy(resp, ct);
 })
 .WithSummary("Отправка команды в PatternService // заглушка");
-
+*/
 
 api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, CancellationToken ct) =>
 {
@@ -91,17 +91,17 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту (LlmService)");
 
-api.MapPost("/workflows/llm/chat", async ([FromBody] string content, OrchApi orc, CancellationToken ct) =>
+/*api.MapPost("/workflows/llm/chat", async ([FromBody] string content, OrchApi orc, CancellationToken ct) =>
 {
     using var resp = await orc.ChatAsync(content, ct);
     return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор");
+}).WithSummary("Запрос ИИ-ассистенту через оркестратор");*/
 
 api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
 {
     using var resp = await orc.ChatAsyncMq(content, ct);
     return await Proxy(resp, ct);
-}).WithSummary("Запрос через шину");
+}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
 
 app.MapHealthChecks("/health/ready");
 
