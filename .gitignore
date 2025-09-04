@@ -26,3 +26,7 @@
 /SmartLearning.Contracts/bin/Debug/net8.0
 /GatewayPatterns.Infrastructure/obj
 /Gateway/GatewayPatterns.Infrastructure/obj
+/Gateway/GatewayPatterns/obj
+/GatewayPatterns.Infrastructure/bin/Debug/net8.0
+/MinIoStub/bin/Debug/net8.0
+/MinIoStub/obj
