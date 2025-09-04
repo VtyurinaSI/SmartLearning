@@ -3,7 +3,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
-using Quartz;
+//using Quartz;
 using SmartLearning.Contracts;
 using OrchestrPatterns.Application.Consumers;
 using MinIoStub;
@@ -22,11 +22,11 @@ builder.Services.AddHttpClient("checker", c => c.BaseAddress =
     new Uri(Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
 
 
-builder.Services.AddQuartz(q =>
-{
-    q.UseMicrosoftDependencyInjectionJobFactory();
-});
-builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
+//builder.Services.AddQuartz(q =>
+//{
+//    q.UseMicrosoftDependencyInjectionJobFactory();
+//});
+//builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 
 builder.Services.AddSingleton<CompletionHub>();
 
@@ -42,10 +42,6 @@ builder.Services.AddMassTransit(x =>
     x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
         .InMemoryRepository();
 
-    x.AddMessageScheduler(new Uri("queue:quartz"));
-
-    x.AddQuartzConsumers();
-
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h =>
@@ -53,8 +49,7 @@ builder.Services.AddMassTransit(x =>
             h.Username("guest");
             h.Password("guest");
         });
-
-        cfg.UseMessageScheduler(new Uri("queue:quartz"));
+        cfg.UseDelayedMessageScheduler();
 
         cfg.ConfigureEndpoints(context);
     });
