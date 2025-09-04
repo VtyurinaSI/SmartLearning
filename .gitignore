@@ -20,3 +20,10 @@
 /AuthService/obj
 /AuthService/bin/Debug/net8.0
 /.vs
+/MinIoStub/bin/Debug/net8.0
+/MinIoStub/obj
+/Orchestrator/OrchestrPatterns.Application/bin/Debug/net8.0
+/Orchestrator/OrchestrPatterns.Domain/bin/Debug/net8.0
+/SmartLearning.Contracts/bin/Debug/net8.0
+/SmartLearning.Contracts/obj/Debug/net8.0
+/SmartLearning.Contracts/obj
