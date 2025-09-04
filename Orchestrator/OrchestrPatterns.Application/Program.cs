@@ -86,16 +86,4 @@ app.MapPost("/mq", async (IBus bus, StartMqDto dto) =>
     return Results.Accepted($"/checking/{id}", new { id });
 });
 
-app.MapPost("/workflows", (WorkflowRequest req, IServiceProvider sp, CancellationToken ct) =>
-{
-    var router = ActivatorUtilities.CreateInstance<SimpleRouter>(sp, req.Content);
-    Checking fsmRef = new();
-    fsmRef.Start((tr, from, to) => router.HandleAsync(tr, from, to, fsmRef, CancellationToken.None).Wait());
-
-    return fsmRef.Status.ToString() + $". LLM: {router.LlmAnswer}";
-});
-
 app.Run();
-
-public record WorkflowRequest(string Content);
-//public record StartDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
