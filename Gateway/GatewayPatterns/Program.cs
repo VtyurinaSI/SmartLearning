@@ -119,6 +119,7 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
 {
     var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/json";
     var body = await resp.Content.ReadAsStringAsync(ct);
+    Log.Information("LLM Reviewer Response: {StatusCode} {Body}", resp.StatusCode, body);
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
 public record ChatMessage(string role, string content);
