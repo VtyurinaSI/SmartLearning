@@ -29,25 +29,18 @@ namespace LlmService
         {
             try
             {
-                // 1) достаём исходный код по CorrelationId
                 var origCode = await _repo.ReadOrigCodeAsync(ctx.Message.CorrelationId, ctx.CancellationToken);
 
-                // 2) собираем тот же формат запроса, что и в контроллере
-                //    (messages: [{ role:"user", content: "<твой prompt + код>" }])
-                var userPrompt =
-                    "Сделай краткий code review. " +
-                    "Обрати внимание на читаемость, тестируемость, безопасность и возможные баги. " +
-                    "Ответ на русском. Код ниже:\n\n" + origCode;
+                var userPrompt = origCode;
 
                 var request = new ChatRequest(
-                    model: "qwen2.5-coder:14b", // тот же модельный тег, что в контроллере
+                    model: "qwen2.5-coder:14b", 
                     messages: new[] { new ChatMessage("user", userPrompt) }
                 );
 
                 var reqJson = JsonSerializer.Serialize(request);
                 using var content = new StringContent(reqJson, Encoding.UTF8, "application/json");
 
-                // 3) отправляем РОВНО туда же, куда стучится контроллер: /v1/chat/completions
                 var client = _http.CreateClient("Ollama");
                 using var resp = await client.PostAsync("v1/chat/completions", content, ctx.CancellationToken);
 
@@ -60,8 +53,6 @@ namespace LlmService
                     await ctx.Publish(new ReviewFailed(ctx.Message.CorrelationId));
                     return;
                 }
-
-                // 4) парсим как в контроллере: choices[0].message
                 ChatResponse? chat = null;
                 try { chat = JsonSerializer.Deserialize<ChatResponse>(respBody); }
                 catch (Exception ex) { _log.LogError(ex, "Failed to parse Ollama response for {Cid}", ctx.Message.CorrelationId); }
@@ -70,7 +61,6 @@ namespace LlmService
 
                 _log.LogInformation("Ollama review (cid {Cid}): {Text}", ctx.Message.CorrelationId, answer);
 
-                // 5) сохраняем и публикуем успешный результат
                 await _repo.SaveReviewAsync(ctx.Message.CorrelationId, answer, ctx.CancellationToken);
                 await ctx.Publish(new ReviewFinished(ctx.Message.CorrelationId));
             }
