@@ -4,10 +4,14 @@
     "Projects": [
       {
         "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
-        "Action": "StartWithoutDebugging"
+        "Action": "Start"
       },
       {
         "Path": "Gateway\\GatewayPatterns\\GatewayPatterns.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "LlmService\\LlmService.csproj",
         "Action": "Start"
       }
     ]

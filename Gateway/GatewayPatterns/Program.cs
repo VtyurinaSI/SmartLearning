@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;

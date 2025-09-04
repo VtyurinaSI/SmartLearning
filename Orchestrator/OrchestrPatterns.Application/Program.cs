@@ -11,10 +11,9 @@ var builder = WebApplication.CreateBuilder();
 
 builder.Services.AddHealthChecks();
 
-#if DEBUG
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-#endif
+
 
 builder.Services.AddHttpClient("compiler", c => c.BaseAddress =
     new Uri(Environment.GetEnvironmentVariable("COMPILER_URL") ?? "http://localhost:6006"));
@@ -54,12 +53,13 @@ builder.Services.AddMassTransit(x =>
 });
 builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.MapGet("/", () => Results.Redirect("/swagger"));
+}
 
-#if DEBUG
-app.UseSwagger();
-app.UseSwaggerUI();
-app.MapGet("/", () => Results.Redirect("/swagger"));
-#endif
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {

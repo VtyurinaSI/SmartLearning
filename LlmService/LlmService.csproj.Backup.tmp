@@ -8,8 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
-    <PackageReference Include="MassTransit" Version="8.*" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
@@ -18,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gateway\GatewayPatterns.Infrastructure\GatewayPatterns.Infrastructure.csproj" />
     <ProjectReference Include="..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
   </ItemGroup>
 

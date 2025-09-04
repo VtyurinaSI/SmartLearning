@@ -45,7 +45,30 @@ namespace GatewayPatterns.Infrastructure
             await using var conn = await _ds.OpenConnectionAsync(ct);
             return await conn.QuerySingleOrDefaultAsync<string?>(
                 new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
+        }
+        public async Task<string?> ReadOrigCodeAsync(Guid checkingId, CancellationToken ct)
+        {
+            const string sql = """
+            select orig_code
+            from public.objectstorage
+            where checking_id = @CheckingId
+            """;
 
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+            return await conn.QuerySingleOrDefaultAsync<string?>(
+                new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
+        }
+        public async Task<string?> SaveReviewAsync(Guid checkingId, string review,CancellationToken ct)
+        {
+            const string sql = """
+            update public.objectstorage
+            set review_res = @ReviewRes
+            where checking_id = @CheckingId
+            """;
+
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+            return await conn.QuerySingleOrDefaultAsync<string?>(
+                new CommandDefinition(sql, new { CheckingId = checkingId, ReviewRes = review }, cancellationToken: ct));
         }
     }
 }
