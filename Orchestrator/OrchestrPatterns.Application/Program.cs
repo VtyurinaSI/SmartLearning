@@ -1,39 +1,105 @@
 using HealthChecks.UI.Client;
+using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Mvc;
+using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
+using Quartz;
+using SmartLearning.Contracts;
+using OrchestrPatterns.Application.Consumers;
+using MinIoStub;
 
 var builder = WebApplication.CreateBuilder();
+
 builder.Services.AddHealthChecks();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient("compiler", c => c.BaseAddress = new Uri(
-    Environment.GetEnvironmentVariable("COMPILER_URL") ?? "http://localhost:6006"));
-builder.Services.AddHttpClient("checker", c => c.BaseAddress = new Uri(
-    Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
-builder.Services.AddHttpClient("reviewer", c => c.BaseAddress = new Uri("http://localhost:6003/"));
-var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+
+builder.Services.AddHttpClient("compiler", c => c.BaseAddress =
+    new Uri(Environment.GetEnvironmentVariable("COMPILER_URL") ?? "http://localhost:6006"));
+builder.Services.AddHttpClient("checker", c => c.BaseAddress =
+    new Uri(Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
+
+
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
+});
+builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
+
+builder.Services.AddSingleton<CompletionHub>();
+
+builder.Services.AddObjectStorage(builder.Configuration);
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<ReviewFinishedConsumer>();
+    x.AddConsumer<ReviewFailedConsumer>();
+
+    x.SetKebabCaseEndpointNameFormatter();
+
+    x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
+        .InMemoryRepository();
+
+    x.AddMessageScheduler(new Uri("queue:quartz"));
+
+    x.AddQuartzConsumers();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.UseMessageScheduler(new Uri("queue:quartz"));
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
+builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
+var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.MapGet("/", () => Results.Redirect("/swagger"));
+}
+
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
-    Predicate = _ => false
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = _ => true,
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-app.MapPost("/workflows", (WorkflowRequest req, IServiceProvider sp, CancellationToken ct) =>
-{
-    var router = ActivatorUtilities.CreateInstance<SimpleRouter>(sp, req.Content);
-    Checking fsmRef = new();
-    fsmRef.Start((tr, from, to) => router.HandleAsync(tr, from, to, fsmRef, CancellationToken.None).Wait());
 
-    return fsmRef.Status.ToString()+$". LLM: {router.LlmAnswer}";
+app.MapPost("/mq", async (IBus bus,
+                          CompletionHub hub,
+                          IObjectStorageRepository repo,
+                          StartMqDto dto,
+                          CancellationToken ct) =>
+{
+    var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
+
+    if (dto.SkipCompile && dto.SkipTests)
+        await bus.Publish(new StartReview(id), ct);
+    else if (dto.SkipCompile)
+        await bus.Publish(new StartTests(id), ct);
+    else
+        await bus.Publish(new StartCompile(id), ct);
+
+    var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
+
+    var review = await repo.ReadReviewAsync(id, ct);
+    return review is null ? Results.NoContent() : Results.Ok(review);
 });
-app.Run(/*"http://localhost:6004"*/);
-public record WorkflowRequest(string Content);
+
+app.Run();

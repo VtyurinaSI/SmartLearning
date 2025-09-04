@@ -1,4 +1,7 @@
+using LlmService;
+using MassTransit;
 using System.Net.Http.Headers;
+using MinIoStub;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
@@ -10,7 +13,26 @@ builder.Services.AddHttpClient("Ollama", client =>
         new MediaTypeWithQualityHeaderValue("application/json"));
 });
 
+builder.Services.AddObjectStorage(builder.Configuration);
+builder.Services.AddMassTransit(x =>
+{
+    x.SetKebabCaseEndpointNameFormatter();
+
+    x.AddConsumer<ReviewRequestedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 builder.Services.AddControllers();
+builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseSwagger();                

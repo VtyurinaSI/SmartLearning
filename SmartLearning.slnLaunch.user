@@ -3,15 +3,15 @@
     "Name": "Новый профиль",
     "Projects": [
       {
-        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "UserService\\UserSvcStub.csproj",
+        "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
         "Action": "Start"
       },
       {
         "Path": "LlmService\\LlmService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
         "Action": "Start"
       }
     ]

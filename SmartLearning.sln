@@ -3,15 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Orchestrator", "Orchestrator", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Application", "Orchestrator\OrchestrPatterns.Application\OrchestrPatterns.Application.csproj", "{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Domain", "Orchestrator\OrchestrPatterns.Domain\OrchestrPatterns.Domain.csproj", "{D06D686E-871A-2153-E55B-C8C388376455}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Domain.Tests", "Orchestrator\OrchestrPatterns.Domain.Tests\OrchestrPatterns.Domain.Tests.csproj", "{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LlmService", "LlmService\LlmService.csproj", "{8A3393AF-2DB8-3FEC-FEEE-38E59BDEE7BD}"
 EndProject
@@ -19,16 +15,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService", "AuthService\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserSvcStub", "UserService\UserSvcStub.csproj", "{15F3E361-11D7-3484-0E54-D340CA10FF6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLearning.Contracts", "SmartLearning.Contracts\SmartLearning.Contracts.csproj", "{A518198D-70CF-4ABB-A4D7-41D839F5B73E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinIoStub", "MinIoStub\MinIoStub.csproj", "{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,10 +35,6 @@ Global
 		{D06D686E-871A-2153-E55B-C8C388376455}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D06D686E-871A-2153-E55B-C8C388376455}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D06D686E-871A-2153-E55B-C8C388376455}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8A3393AF-2DB8-3FEC-FEEE-38E59BDEE7BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8A3393AF-2DB8-3FEC-FEEE-38E59BDEE7BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A3393AF-2DB8-3FEC-FEEE-38E59BDEE7BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -53,6 +47,18 @@ Global
 		{15F3E361-11D7-3484-0E54-D340CA10FF6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15F3E361-11D7-3484-0E54-D340CA10FF6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15F3E361-11D7-3484-0E54-D340CA10FF6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A518198D-70CF-4ABB-A4D7-41D839F5B73E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,7 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{D06D686E-871A-2153-E55B-C8C388376455} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
-		{A35EE4A9-BF5B-0A45-BC1B-37FFFDDB313D} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB1BD21-B62E-4119-AF65-3459797D67F8}
