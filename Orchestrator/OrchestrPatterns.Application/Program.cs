@@ -65,7 +65,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 app.MapPost("/mq", async (IBus bus,
                           CompletionHub hub,
                           IObjectStorageRepository repo,
-                          StartMqDto dto,
+                          StartChecking dto,
                           CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;

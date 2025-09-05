@@ -1,7 +1,6 @@
 ﻿namespace SmartLearning.Contracts
 {
-    public record StartMqDto(Guid CorrelationId = default);
-
+    public record StartChecking(Guid CorrelationId, string UserLogin, long TaskId);
     public record CheckingResults(Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
 
     public record StartCompile(Guid CorrelationId);

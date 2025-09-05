@@ -92,23 +92,12 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту (LlmService)");
 
-/*api.MapPost("/workflows/llm/chat", async ([FromBody] string content, OrchApi orc, CancellationToken ct) =>
-{
-    using var resp = await orc.ChatAsync(content, ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор");*/
-
-//api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
-//{
-//    using var resp = await orc.ChatAsyncMq(content, ct);
-//    return await Proxy(resp, ct);
-//}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
 api.MapPost("/orc/mq/{msg}", async ([FromRoute] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-
+    Guid userId = new();
     if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
-    Guid checkingId = await repo.SaveOrigCodeAsync(msg, ct);
-    using var resp = await orc.ChatAsyncMq(new StartMqDto(checkingId), ct);
+    Guid checkingId = await repo.SaveOrigCodeAsync(msg, userId, ct);
+    using var resp = await orc.ChatAsyncMq(new StartChecking(checkingId, userId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
 
