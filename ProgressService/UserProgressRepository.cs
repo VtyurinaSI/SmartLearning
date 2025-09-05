@@ -16,24 +16,7 @@ namespace ProgressService
             _log.LogInformation("ObjectStorageRepository создан");
         }
 
-        public async Task<Guid> SaveOrigCodeAsync(string origCode, Guid userId, CancellationToken ct)
-        {
-            var checkingId = Guid.NewGuid();
-            //var userId = Guid.NewGuid();
-
-            const string sql = """
-            insert into public.objectstorage (checking_id, user_id, orig_code)
-            values (@CheckingId, @UserId, @OrigCode);
-            """;
-
-            await using var conn = await _ds.OpenConnectionAsync(ct);
-
-            var args = new { CheckingId = checkingId, UserId = userId, OrigCode = origCode };
-            await conn.ExecuteAsync(new CommandDefinition(sql, args, cancellationToken: ct));
-
-            _log.LogInformation("Saved source. checking_id={CheckingId} user_id={UserId}", checkingId, userId);
-            return checkingId;
-        }
+       
 
         public async Task<Guid?> GetUserIdAsync(string userLogin, CancellationToken ct)
         {
@@ -43,10 +26,10 @@ namespace ProgressService
             where user_login = @UserLogin
             """;
             await using var conn = await _ds.OpenConnectionAsync(ct);
-            var userIdString = await conn.QuerySingleOrDefaultAsync<string?>(
+            var userId = await conn.QuerySingleOrDefaultAsync<Guid?>(
                 new CommandDefinition(sql, new { UserLogin = userLogin }, cancellationToken: ct));
-            if (userIdString is null) return null;
-            return Guid.Parse(userIdString);
+            if (userId is null) return null;
+            return userId;
         }
 
         public async Task SaveCheckingAsync(Guid userId, long taskId, bool isCompiledSuccess, bool isTestedSuccess, bool isReviewedSuccess, CancellationToken ct)

@@ -21,7 +21,9 @@ builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.Http
 builder.Services.AddHttpClient<UsersApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"] ?? "http://localhost:6001/"))
     .AddHeaderPropagation();
-
+builder.Services.AddHttpClient<ProgressApi>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"] ?? "http://localhost:6010/"))
+    .AddHeaderPropagation();
 builder.Services.AddHttpClient<PatternsApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"] ?? "http://localhost:6002/"))
     .AddHeaderPropagation();
@@ -92,12 +94,14 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту (LlmService)");
 
-api.MapPost("/orc/mq/{msg}", async ([FromRoute] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
+api.MapPost("/orc/mq", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-    Guid userId = new();
-    if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
-    Guid checkingId = await repo.SaveOrigCodeAsync(msg, userId, ct);
-    using var resp = await orc.ChatAsyncMq(new StartChecking(checkingId, userId), ct);
+    var userIdResp = await pr.PingAsync(msg.UserLogin, ct);
+    var userIdString = await userIdResp.Content.ReadAsStringAsync(ct);
+    var userId = Guid.Parse(userIdString);
+    Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
+    //http
+    using var resp = await orc.ChatAsyncMq(new StartChecking(checkingId, userId, msg.TaskId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
 

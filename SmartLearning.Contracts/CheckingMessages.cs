@@ -1,6 +1,7 @@
 ﻿namespace SmartLearning.Contracts
 {
-    public record StartChecking(Guid CorrelationId, string UserLogin, long TaskId);
+    public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId);
+    public record RecievedForChecking(string UserLogin, long TaskId, string OrigCode);
     public record CheckingResults(Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
 
     public record StartCompile(Guid CorrelationId);
