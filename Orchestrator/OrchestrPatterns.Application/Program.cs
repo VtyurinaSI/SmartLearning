@@ -76,34 +76,18 @@ app.MapPost("/mq", async (IBus bus,
                           CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
+        
 
-    //if (dto.SkipCompile && dto.SkipTests)
-    //    await bus.Publish(new StartReview(id), ct);
-    //else if (dto.SkipCompile)
-    //    await bus.Publish(new StartTests(id), ct);
-    //else
     await bus.Publish(new CompileRequested(id), ct);
     var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
-    if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
-
-
+    var compilRes = await repo.ReadCompilationAsync(id, ct);
+    if (!ok)    
+        return Results.Ok(new CheckingResults (id, compilRes, null, null));
+    
     await bus.Publish(new ReviewRequested(id), ct);
-    ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
-    if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
-
-    var res = new CheckingResults(
-            id,
-            await repo.ReadCompilationAsync(id, ct),
-            null,
-            await repo.ReadReviewAsync(id, ct));
-
-    return  Results.Ok(
-        new CheckingResults(
-            id,
-            await repo.ReadCompilationAsync(id, ct),
-            null,
-            await repo.ReadReviewAsync(id, ct)
-            ));
+    await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    var reviewRes = await repo.ReadReviewAsync(id, ct);
+    return Results.Ok(new CheckingResults(id, compilRes, null, reviewRes));
 });
 
 app.Run();
