@@ -6,7 +6,6 @@ using OrchestrPatterns.Domain;
 using SmartLearning.Contracts;
 using OrchestrPatterns.Application.Consumers;
 using MinIoStub;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -14,12 +13,6 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
-builder.Services.AddHttpClient("compiler", c => c.BaseAddress =
-    new Uri(Environment.GetEnvironmentVariable("COMPILER_URL") ?? "http://localhost:6006"));
-builder.Services.AddHttpClient("checker", c => c.BaseAddress =
-    new Uri(Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
 
 builder.Services.AddSingleton<CompletionHub>();
 
