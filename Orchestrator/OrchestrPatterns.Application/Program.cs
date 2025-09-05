@@ -6,6 +6,7 @@ using OrchestrPatterns.Domain;
 using SmartLearning.Contracts;
 using OrchestrPatterns.Application.Consumers;
 using MinIoStub;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -81,16 +82,28 @@ app.MapPost("/mq", async (IBus bus,
     //else if (dto.SkipCompile)
     //    await bus.Publish(new StartTests(id), ct);
     //else
-        await bus.Publish(new CompileRequested(id), ct);
-
+    await bus.Publish(new CompileRequested(id), ct);
     var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
 
-    //var review = await repo.ReadReviewAsync(id, ct);
-    //return review is null ? Results.NoContent() : Results.Ok(review);
 
-    var compile = await repo.ReadCompilationAsync(id, ct);
-    return compile is null ? Results.NoContent() : Results.Ok(compile);
+    await bus.Publish(new ReviewRequested(id), ct);
+    ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
+
+    var res = new CheckingResults(
+            id,
+            await repo.ReadCompilationAsync(id, ct),
+            null,
+            await repo.ReadReviewAsync(id, ct));
+
+    return  Results.Ok(
+        new CheckingResults(
+            id,
+            await repo.ReadCompilationAsync(id, ct),
+            null,
+            await repo.ReadReviewAsync(id, ct)
+            ));
 });
 
 app.Run();

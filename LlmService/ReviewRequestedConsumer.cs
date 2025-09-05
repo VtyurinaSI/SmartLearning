@@ -30,10 +30,15 @@ namespace LlmService
             {
                 var origCode = await _repo.ReadOrigCodeAsync(ctx.Message.CorrelationId, ctx.CancellationToken);
 
-                var userPrompt = origCode;
+                var userPrompt = """
+                    Привет! Ты эксперт в области разработки на C#.
+                    Сделай code review. Обрати внимание на читаемость и возможные баги. 
+                    Краткий ответ на русском. Исправленный код писать не надо.
+                    Вот сам код: 
+                    """ + origCode;
 
                 var request = new ChatRequest(
-                    model: "qwen2.5-coder:14b", 
+                    model: "qwen2.5-coder:14b",
                     messages: new[] { new ChatMessage("user", userPrompt) }
                 );
 

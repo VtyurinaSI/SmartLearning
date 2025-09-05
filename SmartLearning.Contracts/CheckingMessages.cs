@@ -1,5 +1,9 @@
 ﻿namespace SmartLearning.Contracts
 {
+    public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
+
+    public record CheckingResults(Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
+
     public record StartCompile(Guid CorrelationId);
     public record StartTests(Guid CorrelationId);
     public record StartReview(Guid CorrelationId);
@@ -10,7 +14,6 @@
     public record CompilationFinished(Guid CorrelationId);
     public record CompilationFailed(Guid CorrelationId);
     public record CompileTimeout(Guid CorrelationId);
-    public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
     public record TestsFinished(Guid CorrelationId);
     public record TestsFailed(Guid CorrelationId);
     public record TestsTimeout(Guid CorrelationId);

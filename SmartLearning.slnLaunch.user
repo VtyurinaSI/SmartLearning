@@ -13,6 +13,10 @@
       {
         "Path": "CompilerSevice\\CompilerSevice.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "LlmService\\LlmService.csproj",
+        "Action": "Start"
       }
     ]
   }
