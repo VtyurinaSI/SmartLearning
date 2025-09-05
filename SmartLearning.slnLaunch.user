@@ -7,11 +7,11 @@
         "Action": "Start"
       },
       {
-        "Path": "LlmService\\LlmService.csproj",
+        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
         "Action": "Start"
       },
       {
-        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
+        "Path": "CompilerSevice\\CompilerSevice.csproj",
         "Action": "Start"
       }
     ]

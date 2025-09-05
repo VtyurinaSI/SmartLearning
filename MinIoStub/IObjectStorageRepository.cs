@@ -2,9 +2,11 @@
 {
     public interface IObjectStorageRepository
     {
-        Task<Guid> SaveSourceAsync(string origCode, CancellationToken ct);
+        Task<Guid> SaveOrigCodeAsync(string origCode, CancellationToken ct);
         Task<string?> ReadReviewAsync(Guid checkingId, CancellationToken ct);
         Task<string?> ReadOrigCodeAsync(Guid checkingId, CancellationToken ct);
-        Task<string?> SaveReviewAsync(Guid checkingId, string review, CancellationToken ct);
+        Task SaveReviewAsync(Guid checkingId, string review, CancellationToken ct);
+        Task SaveCompilationAsync(Guid checkingId, string compileRes, CancellationToken ct);
+        Task<string?> ReadCompilationAsync(Guid checkingId, CancellationToken ct);
     }
 }

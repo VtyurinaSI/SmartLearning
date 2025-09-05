@@ -107,7 +107,7 @@ api.MapPost("/orc/mq/{msg}", async ([FromRoute] string msg, IObjectStorageReposi
 {
 
     if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
-    Guid checkingId = await repo.SaveSourceAsync(msg, ct);
+    Guid checkingId = await repo.SaveOrigCodeAsync(msg, ct);
     using var resp = await orc.ChatAsyncMq(new StartMqDto(true, true, checkingId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");

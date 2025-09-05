@@ -24,7 +24,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
     public Event<StartReview> StartReviewEvent { get; private set; } = default!;
     public Event<Cancel> CancelEvent { get; private set; } = default!;
 
-    public Event<CodeCompiled> CodeCompiledEvent { get; private set; } = default!;
+    public Event<CompilationFinished> CodeCompiledEvent { get; private set; } = default!;
     public Event<CompilationFailed> CompilationFailedEvent { get; private set; } = default!;
     public Event<CompileTimeout> CompileTimeoutEvent { get; private set; } = default!;
 

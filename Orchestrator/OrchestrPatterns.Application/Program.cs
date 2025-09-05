@@ -3,7 +3,6 @@ using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using OrchestrPatterns.Application;
 using OrchestrPatterns.Domain;
-//using Quartz;
 using SmartLearning.Contracts;
 using OrchestrPatterns.Application.Consumers;
 using MinIoStub;
@@ -21,13 +20,6 @@ builder.Services.AddHttpClient("compiler", c => c.BaseAddress =
 builder.Services.AddHttpClient("checker", c => c.BaseAddress =
     new Uri(Environment.GetEnvironmentVariable("CHECKER_URL") ?? "http://localhost:6005"));
 
-
-//builder.Services.AddQuartz(q =>
-//{
-//    q.UseMicrosoftDependencyInjectionJobFactory();
-//});
-//builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
-
 builder.Services.AddSingleton<CompletionHub>();
 
 builder.Services.AddObjectStorage(builder.Configuration);
@@ -36,7 +28,8 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ReviewFinishedConsumer>();
     x.AddConsumer<ReviewFailedConsumer>();
-
+    x.AddConsumer<CompileFinishedConsumers>();
+    x.AddConsumer<CompileFailedConsumer>();
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
@@ -83,18 +76,21 @@ app.MapPost("/mq", async (IBus bus,
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
-    if (dto.SkipCompile && dto.SkipTests)
-        await bus.Publish(new StartReview(id), ct);
-    else if (dto.SkipCompile)
-        await bus.Publish(new StartTests(id), ct);
-    else
-        await bus.Publish(new StartCompile(id), ct);
+    //if (dto.SkipCompile && dto.SkipTests)
+    //    await bus.Publish(new StartReview(id), ct);
+    //else if (dto.SkipCompile)
+    //    await bus.Publish(new StartTests(id), ct);
+    //else
+        await bus.Publish(new CompileRequested(id), ct);
 
     var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     if (!ok) return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
 
-    var review = await repo.ReadReviewAsync(id, ct);
-    return review is null ? Results.NoContent() : Results.Ok(review);
+    //var review = await repo.ReadReviewAsync(id, ct);
+    //return review is null ? Results.NoContent() : Results.Ok(review);
+
+    var compile = await repo.ReadCompilationAsync(id, ct);
+    return compile is null ? Results.NoContent() : Results.Ok(compile);
 });
 
 app.Run();
