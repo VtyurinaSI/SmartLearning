@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MinIoStub;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
+using System.Net;
 using System.Text;
-using MinIoStub;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,9 +97,28 @@ api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, Cancellat
 
 api.MapPost("/orc/mq", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-    var userIdResp = await pr.PingAsync(msg.UserLogin, ct);
-    var userIdString = await userIdResp.Content.ReadAsStringAsync(ct);
-    var userId = Guid.Parse(userIdString);
+    using var userIdResp = await pr.PingAsync(msg.UserLogin, ct);
+
+    if (userIdResp.StatusCode == HttpStatusCode.NotFound)
+        return Results.NotFound($"ѕользователь '{msg.UserLogin}' не найден.");
+    
+    userIdResp.EnsureSuccessStatusCode();
+
+    Guid userId;
+    var mediaType = userIdResp.Content.Headers.ContentType?.MediaType;
+
+    if (string.Equals(mediaType, "text/plain", StringComparison.OrdinalIgnoreCase))
+    {
+        var s = await userIdResp.Content.ReadAsStringAsync(ct);
+        userId = Guid.Parse(s.Trim('"', ' ', '\n', '\r', '\t'));
+    }
+    else
+    {
+        var uid = await userIdResp.Content.ReadFromJsonAsync<Guid?>(cancellationToken: ct);
+        if (uid is null) return Results.Problem("Progress вернул пустой GUID.");
+        userId = uid.Value;
+    }
+
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
     //http
     using var resp = await orc.ChatAsyncMq(new StartChecking(checkingId, userId, msg.TaskId), ct);

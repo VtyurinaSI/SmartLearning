@@ -14,10 +14,9 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect("/swagger"));
 }
 
-app.UseHttpsRedirection();
-app.MapPost("/userid", async (string UserLogin, IUserProgressRepository repo, CancellationToken ct) =>
+app.MapGet("/userid/{userLogin}", async (string userLogin, IUserProgressRepository repo, CancellationToken ct) =>
 {
-    var userId = await repo.GetUserIdAsync(UserLogin, ct);
-    return userId is null ? Results.Empty : Results.Ok(userId);
+    var userId = await repo.GetUserIdAsync(userLogin, ct);
+    return userId is null ? Results.NotFound() : Results.Text(userId.ToString());
 });
 app.Run("http://localhost:6010");
