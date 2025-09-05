@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinIoStub", "MinIoStub\MinIoStub.csproj", "{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerSevice", "CompilerSevice\CompilerSevice.csproj", "{06907A6D-F5B1-48BD-9798-9F5F5194B97D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compil", "Compil\Compil.csproj", "{A1D5413B-42F9-4E1A-8084-ECFBF55B5F9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +63,14 @@ Global
 		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1D5413B-42F9-4E1A-8084-ECFBF55B5F9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1D5413B-42F9-4E1A-8084-ECFBF55B5F9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1D5413B-42F9-4E1A-8084-ECFBF55B5F9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1D5413B-42F9-4E1A-8084-ECFBF55B5F9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -11,7 +11,6 @@ namespace LlmService
         private readonly IHttpClientFactory _http;
         private readonly ILogger<ReviewRequestedConsumer> _log;
         private readonly IObjectStorageRepository _repo;
-        private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
 
         public ReviewRequestedConsumer(IHttpClientFactory http, IObjectStorageRepository repo, ILogger<ReviewRequestedConsumer> log)
         {

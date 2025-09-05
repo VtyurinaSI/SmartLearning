@@ -6,7 +6,8 @@
     public record Cancel(Guid CorrelationId);
 
     public record ReviewRequested(Guid CorrelationId);
-    public record CodeCompiled(Guid CorrelationId);
+    public record CompileRequested(Guid CorrelationId);
+    public record CompilationFinished(Guid CorrelationId);
     public record CompilationFailed(Guid CorrelationId);
     public record CompileTimeout(Guid CorrelationId);
     public record StartMqDto(bool SkipCompile = false, bool SkipTests = false, Guid CorrelationId = default);
