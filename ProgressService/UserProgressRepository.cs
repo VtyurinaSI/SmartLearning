@@ -16,8 +16,6 @@ namespace ProgressService
             _log.LogInformation("ObjectStorageRepository создан");
         }
 
-       
-
         public async Task<Guid?> GetUserIdAsync(string userLogin, CancellationToken ct)
         {
             const string sql = """
@@ -35,15 +33,29 @@ namespace ProgressService
         public async Task SaveCheckingAsync(Guid userId, long taskId, bool isCompiledSuccess, bool isTestedSuccess, bool isReviewedSuccess, CancellationToken ct)
         {
             const string sql = """
-            update public.objectstorage
-            set compil_res = @CompilRes
-            where checking_id = @CheckingId
-            """;
+                INSERT INTO public.progress AS p (user_id, task_id, task_name, compile, test, review)
+                VALUES (@UserId, @TaskId, @TaskName, @Compile, @Test, @Review)
+                ON CONFLICT (user_id, task_id) DO UPDATE
+                SET compile = EXCLUDED.compile,
+                    test    = EXCLUDED.test,
+                    review  = EXCLUDED.review
+                RETURNING p.task_id;
+                """;
 
-            //await using var conn = await _ds.OpenConnectionAsync(ct);
-            //await conn.QuerySingleOrDefaultAsync<string?>(
-            //   new CommandDefinition(sql, new { CheckingId = checkingId, CompilRes = compileRes }, cancellationToken: ct));
-
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+            await conn.QuerySingleOrDefaultAsync<string?>(
+               new CommandDefinition(
+                   sql,
+                   new
+                   {
+                       UserId = userId,
+                       TaskId = taskId,
+                       TaskName = "task " + taskId.ToString(),
+                       Compile = isCompiledSuccess,
+                       Test = isTestedSuccess,
+                       Review = isReviewedSuccess
+                   },
+                   cancellationToken: ct));
 
         }
     }

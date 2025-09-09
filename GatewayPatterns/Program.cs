@@ -103,7 +103,7 @@ api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi
         userId = uid.Value;
     }
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
-    
+
     using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
