@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Настройка PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5432;Database=auth_service;Username=postgres;Password=qwe123"));
+    options.UseNpgsql("Host=localhost;Port=5432;Database=AuthService;Username=postgres;Password=1234"));
 
 // Упрощенная Identity конфигурация
 builder.Services.AddIdentityCore<User>()
@@ -80,12 +80,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Настройка Swagger UI
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service v1");
-    c.RoutePrefix = "swagger"; // Доступ по /swagger
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service v1");
+        c.RoutePrefix = "swagger"; // Доступ по /swagger
+    });
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

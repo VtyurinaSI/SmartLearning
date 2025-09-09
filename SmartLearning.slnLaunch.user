@@ -21,6 +21,10 @@
       {
         "Path": "CompilerSevice\\CompilerSevice.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "AuthService\\AuthService.csproj",
+        "Action": "Start"
       }
     ]
   }
