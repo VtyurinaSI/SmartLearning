@@ -91,6 +91,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
             ValidateLifetime = true,
+#warning "ClockSkew с рефрешем"
             ClockSkew = TimeSpan.FromMinutes(10)
         };
     });
@@ -127,7 +128,7 @@ app.Use(async (ctx, next) =>
     if (ctx.User?.Identity?.IsAuthenticated == true)
     {
         var uid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                 ?? ctx.User.FindFirstValue("sub"); 
+                 ?? ctx.User.FindFirstValue("sub");
 
         if (!string.IsNullOrEmpty(uid))
             ctx.Request.Headers["X-User-Id"] = uid;
@@ -171,13 +172,17 @@ api.MapPost("/auth/register", async ([FromBody] RegisterRequest req, AuthApi aut
 {
     using var resp = await auth.RegisterAsync(req, ct);
     return await Proxy(resp, ct);
-}).AllowAnonymous();
+})
+    .AllowAnonymous()
+.WithSummary("Регистрация нового пользователя"); 
 
 api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, CancellationToken ct) =>
 {
     using var resp = await auth.LoginAsync(req, ct);
     return await Proxy(resp, ct);
-}).AllowAnonymous();
+})
+    .AllowAnonymous()
+    .WithSummary("Авторизация");
 
 app.MapHealthChecks("/health/ready");
 
