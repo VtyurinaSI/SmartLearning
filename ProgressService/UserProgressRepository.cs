@@ -29,7 +29,21 @@ namespace ProgressService
             if (userId is null) return null;
             return userId;
         }
+        public record ProgressRow(long TaskId, bool Compile, bool Test, bool Review);
+        public async Task<IReadOnlyList<ProgressRow>> GetUserProgressAsync(Guid userId, CancellationToken ct)
+        {
+            const string sql = """
+                select task_id as TaskId, compile, test, review
+                from public.progress
+                where user_id = @UserId
+                order by task_id
+                """;
 
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+            var rows = await conn.QueryAsync<ProgressRow>(
+                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+            return rows.AsList();
+        }
         public async Task SaveCheckingAsync(Guid userId, long taskId, bool isCompiledSuccess, bool isTestedSuccess, bool isReviewedSuccess, CancellationToken ct)
         {
             const string sql = """

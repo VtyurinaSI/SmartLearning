@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,14 +79,44 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 })
 .WithSummary("Отправка команды в UserService // заглушка");
 
+api.MapGet("/progress/userprogress/{login}", async ([FromRoute] string login, ProgressApi pr, CancellationToken ct) =>
+{
+    Guid? userId = await GetUserIdByLoginAsync(login, pr, ct);
+    if (userId is null)
+        return null;
+    using var resp = await pr.GetUserProgressAsync(userId.Value, ct);
+    return await Proxy(resp, ct);
+})
+.WithSummary("Отправка команды в UserService // заглушка");
 
 api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-    using var userIdResp = await pr.PingAsync(msg.UserLogin, ct);
+    Guid? userId = await GetUserIdByLoginAsync(msg.UserLogin, pr, ct);
+    if (userId is null)
+        return null;// Results.NotFound($"User '{msg.UserLogin}' not found");
+    Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId.Value, ct);
+
+    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId.Value, msg.TaskId), ct);
+    return await Proxy(resp, ct);
+}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
+
+app.MapHealthChecks("/health/ready");
+
+app.Run("http://localhost:5000/");
+static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
+{
+    var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/json";
+    var body = await resp.Content.ReadAsStringAsync(ct);
+    return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
+}
+
+static async Task<Guid?> GetUserIdByLoginAsync(string login, ProgressApi pr, CancellationToken ct)
+{
+    using var userIdResp = await pr.GetUserIdAsync(login, ct);
 
     if (userIdResp.StatusCode == HttpStatusCode.NotFound)
-        return Results.NotFound($"Пользователь '{msg.UserLogin}' не найден.");
-    
+        return null;
+
     userIdResp.EnsureSuccessStatusCode();
 
     Guid userId;
@@ -99,21 +130,9 @@ api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi
     else
     {
         var uid = await userIdResp.Content.ReadFromJsonAsync<Guid?>(cancellationToken: ct);
-        if (uid is null) return Results.Problem("Progress вернул пустой GUID.");
+        if (uid is null) return null;
         userId = uid.Value;
     }
-    Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
+    return userId;
 
-    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
-
-app.MapHealthChecks("/health/ready");
-
-app.Run("http://localhost:5000/");
-static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
-{
-    var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/json";
-    var body = await resp.Content.ReadAsStringAsync(ct);
-    return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
