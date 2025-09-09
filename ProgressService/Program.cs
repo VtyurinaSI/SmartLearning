@@ -39,7 +39,7 @@ app.MapGet("/userid/{userLogin}", async (string userLogin, IUserProgressReposito
     return userId is null ? Results.NotFound() : Results.Text(userId.ToString());
 });
 
-app.MapGet("/userprogress/{userId}", async (Guid userId, IUserProgressRepository repo, CancellationToken ct) =>
+app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepository repo, CancellationToken ct) =>
 {
     var story = await repo.GetUserProgressAsync(userId, ct);
     ComplitedTasks[] compl = story.Where(r => r.Compile && r.Test && r.Review).Select(r => new ComplitedTasks(r.TaskId)).ToArray();

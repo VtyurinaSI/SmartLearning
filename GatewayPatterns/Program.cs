@@ -5,11 +5,9 @@ using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -79,26 +77,28 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 })
 .WithSummary("Отправка команды в UserService // заглушка");
 
-api.MapGet("/progress/userprogress/{login}", async ([FromRoute] string login, ProgressApi pr, CancellationToken ct) =>
+api.MapGet("/progress/user_progress/{login}", async ([FromRoute] string login, ProgressApi pr, CancellationToken ct) =>
 {
     Guid? userId = await GetUserIdByLoginAsync(login, pr, ct);
     if (userId is null)
-        return null;
+        return Results.NotFound($"User \"{login}\" not found");
     using var resp = await pr.GetUserProgressAsync(userId.Value, ct);
     return await Proxy(resp, ct);
 })
-.WithSummary("Отправка команды в UserService // заглушка");
+.WithSummary("Запрос прогресса пользователя");
 
 api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
     Guid? userId = await GetUserIdByLoginAsync(msg.UserLogin, pr, ct);
     if (userId is null)
-        return null;// Results.NotFound($"User '{msg.UserLogin}' not found");
+        return Results.NotFound($"User \"{msg.UserLogin}\" not found");
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId.Value, ct);
 
     using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId.Value, msg.TaskId), ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
+
+    var ans = await Proxy(resp, ct);
+    return ans;
+}).WithSummary("Проверка кода");
 
 app.MapHealthChecks("/health/ready");
 

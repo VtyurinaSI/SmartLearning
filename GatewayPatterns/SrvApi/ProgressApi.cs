@@ -12,7 +12,7 @@
     }
     public Task<HttpResponseMessage> GetUserProgressAsync(Guid userId, CancellationToken ct)
     {
-        var req = new HttpRequestMessage(HttpMethod.Get, $"/userprogress/{userId}");
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/user_progress/{userId}");
         req.Headers.Remove("X-Echo");
         req.Headers.TryAddWithoutValidation("X-Echo", userId.ToString());
         return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
