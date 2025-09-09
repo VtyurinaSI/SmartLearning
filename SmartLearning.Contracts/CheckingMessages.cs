@@ -2,7 +2,7 @@
 {
     public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId);
     public record RecievedForChecking(string UserLogin, long TaskId, string OrigCode);
-    public record CheckingResults(Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
+    public record CheckingResults(Guid UserId,Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
 
     public record StartCompile(Guid CorrelationId);
     public record StartTests(Guid CorrelationId);

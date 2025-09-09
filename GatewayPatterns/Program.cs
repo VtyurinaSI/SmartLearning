@@ -29,9 +29,6 @@ builder.Services.AddHttpClient<PatternsApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"] ?? "http://localhost:6002/"))
     .AddHeaderPropagation();
 
-builder.Services.AddHttpClient<LlmApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Llm"] ?? "http://localhost:6003/"))
-    .AddHeaderPropagation();
 builder.Services.AddHttpClient<OrchApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"] ?? "http://localhost:6000/"))
     .AddHeaderPropagation();
@@ -81,21 +78,8 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 })
 .WithSummary("Отправка команды в UserService // заглушка");
 
-/*api.MapGet("/patterns/{msg}", async ([FromRoute] string msg, PatternsApi patterns, CancellationToken ct) =>
-{
-    using var resp = await patterns.PingAsync(msg, ct);
-    return await Proxy(resp, ct);
-})
-.WithSummary("Отправка команды в PatternService // заглушка");
-*/
 
-api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, CancellationToken ct) =>
-{
-    using var resp = await llm.ChatAsync(content, ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту (LlmService)");
-
-api.MapPost("/orc/mq", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
+api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
     using var userIdResp = await pr.PingAsync(msg.UserLogin, ct);
 
@@ -118,10 +102,9 @@ api.MapPost("/orc/mq", async ([FromBody] RecievedForChecking msg, ProgressApi pr
         if (uid is null) return Results.Problem("Progress вернул пустой GUID.");
         userId = uid.Value;
     }
-
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
-    //http
-    using var resp = await orc.ChatAsyncMq(new StartChecking(checkingId, userId, msg.TaskId), ct);
+    
+    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
     return await Proxy(resp, ct);
 }).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
 
@@ -132,7 +115,5 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
 {
     var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/json";
     var body = await resp.Content.ReadAsStringAsync(ct);
-    Log.Information("LLM Reviewer Response: {StatusCode} {Body}", resp.StatusCode, body);
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
-public record ChatMessage(string role, string content);

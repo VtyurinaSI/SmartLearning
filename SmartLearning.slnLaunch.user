@@ -9,6 +9,18 @@
       {
         "Path": "ProgressService\\ProgressService.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "LlmService\\LlmService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "CompilerSevice\\CompilerSevice.csproj",
+        "Action": "Start"
       }
     ]
   }
