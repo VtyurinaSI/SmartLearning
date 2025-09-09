@@ -16,10 +16,9 @@ namespace MinIoStub
             _log.LogInformation("ObjectStorageRepository создан");
         }
 
-        public async Task<Guid> SaveOrigCodeAsync(string origCode, CancellationToken ct)
+        public async Task<Guid> SaveOrigCodeAsync(string origCode, Guid userId, CancellationToken ct)
         {
             var checkingId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
 
             const string sql = """
             insert into public.objectstorage (checking_id, user_id, orig_code)

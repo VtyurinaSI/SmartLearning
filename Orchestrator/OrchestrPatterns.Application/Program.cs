@@ -61,26 +61,39 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = _ => true,
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
+var orc = app.MapGroup("/orc");
 
-app.MapPost("/mq", async (IBus bus,
+orc.MapPost("/check", async (IBus bus,
                           CompletionHub hub,
                           IObjectStorageRepository repo,
-                          StartMqDto dto,
+                          StartChecking dto,
                           CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
-        
+
 
     await bus.Publish(new CompileRequested(id), ct);
     var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    await Task.Delay(200, ct);
     var compilRes = await repo.ReadCompilationAsync(id, ct);
-    if (!ok)    
-        return Results.Ok(new CheckingResults (id, compilRes, null, null));
-    
+
+    if (!ok)
+    {
+        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, false, false, false), ct);
+        return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
+    }
+    Random rnd = new();
+    if (rnd.Next(0, 2) == 0)
+    {
+        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, false, false), ct);
+        return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
+    }
+
     await bus.Publish(new ReviewRequested(id), ct);
     await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     var reviewRes = await repo.ReadReviewAsync(id, ct);
-    return Results.Ok(new CheckingResults(id, compilRes, null, reviewRes));
+    await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true), ct);
+    return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, reviewRes));
 });
 
 app.Run();

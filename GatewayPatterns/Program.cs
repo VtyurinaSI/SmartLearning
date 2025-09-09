@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MinIoStub;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
+using System.Net;
 using System.Text;
-using MinIoStub;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -21,14 +21,13 @@ builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.Http
 builder.Services.AddHttpClient<UsersApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"] ?? "http://localhost:6001/"))
     .AddHeaderPropagation();
-
+builder.Services.AddHttpClient<ProgressApi>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"] ?? "http://localhost:6010/"))
+    .AddHeaderPropagation();
 builder.Services.AddHttpClient<PatternsApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"] ?? "http://localhost:6002/"))
     .AddHeaderPropagation();
 
-builder.Services.AddHttpClient<LlmApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Llm"] ?? "http://localhost:6003/"))
-    .AddHeaderPropagation();
 builder.Services.AddHttpClient<OrchApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"] ?? "http://localhost:6000/"))
     .AddHeaderPropagation();
@@ -78,39 +77,28 @@ api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, Cancel
 })
 .WithSummary("Отправка команды в UserService // заглушка");
 
-/*api.MapGet("/patterns/{msg}", async ([FromRoute] string msg, PatternsApi patterns, CancellationToken ct) =>
+api.MapGet("/progress/user_progress/{login}", async ([FromRoute] string login, ProgressApi pr, CancellationToken ct) =>
 {
-    using var resp = await patterns.PingAsync(msg, ct);
+    Guid? userId = await GetUserIdByLoginAsync(login, pr, ct);
+    if (userId is null)
+        return Results.NotFound($"User \"{login}\" not found");
+    using var resp = await pr.GetUserProgressAsync(userId.Value, ct);
     return await Proxy(resp, ct);
 })
-.WithSummary("Отправка команды в PatternService // заглушка");
-*/
+.WithSummary("Запрос прогресса пользователя");
 
-api.MapPost("/llm/chat", async ([FromBody] string content, LlmApi llm, CancellationToken ct) =>
+api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
 {
-    using var resp = await llm.ChatAsync(content, ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту (LlmService)");
+    Guid? userId = await GetUserIdByLoginAsync(msg.UserLogin, pr, ct);
+    if (userId is null)
+        return Results.NotFound($"User \"{msg.UserLogin}\" not found");
+    Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId.Value, ct);
 
-/*api.MapPost("/workflows/llm/chat", async ([FromBody] string content, OrchApi orc, CancellationToken ct) =>
-{
-    using var resp = await orc.ChatAsync(content, ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор");*/
+    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId.Value, msg.TaskId), ct);
 
-//api.MapPost("/orc/mq", async (StartMqDto content, OrchApi orc, CancellationToken ct) =>
-//{
-//    using var resp = await orc.ChatAsyncMq(content, ct);
-//    return await Proxy(resp, ct);
-//}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
-api.MapPost("/orc/mq/{msg}", async ([FromRoute] string msg, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
-{
-
-    if (string.IsNullOrWhiteSpace(msg)) return Results.BadRequest("origCode is required");
-    Guid checkingId = await repo.SaveOrigCodeAsync(msg, ct);
-    using var resp = await orc.ChatAsyncMq(new StartMqDto(checkingId), ct);
-    return await Proxy(resp, ct);
-}).WithSummary("Запрос ИИ-ассистенту через оркестратор и шину");
+    var ans = await Proxy(resp, ct);
+    return ans;
+}).WithSummary("Проверка кода");
 
 app.MapHealthChecks("/health/ready");
 
@@ -119,7 +107,32 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
 {
     var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/json";
     var body = await resp.Content.ReadAsStringAsync(ct);
-    Log.Information("LLM Reviewer Response: {StatusCode} {Body}", resp.StatusCode, body);
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
-public record ChatMessage(string role, string content);
+
+static async Task<Guid?> GetUserIdByLoginAsync(string login, ProgressApi pr, CancellationToken ct)
+{
+    using var userIdResp = await pr.GetUserIdAsync(login, ct);
+
+    if (userIdResp.StatusCode == HttpStatusCode.NotFound)
+        return null;
+
+    userIdResp.EnsureSuccessStatusCode();
+
+    Guid userId;
+    var mediaType = userIdResp.Content.Headers.ContentType?.MediaType;
+
+    if (string.Equals(mediaType, "text/plain", StringComparison.OrdinalIgnoreCase))
+    {
+        var s = await userIdResp.Content.ReadAsStringAsync(ct);
+        userId = Guid.Parse(s.Trim('"', ' ', '\n', '\r', '\t'));
+    }
+    else
+    {
+        var uid = await userIdResp.Content.ReadFromJsonAsync<Guid?>(cancellationToken: ct);
+        if (uid is null) return null;
+        userId = uid.Value;
+    }
+    return userId;
+
+}

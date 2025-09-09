@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinIoStub", "MinIoStub\MinI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerSevice", "CompilerSevice\CompilerSevice.csproj", "{06907A6D-F5B1-48BD-9798-9F5F5194B97D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProgressService", "ProgressService\ProgressService.csproj", "{78580638-1A2C-48C5-B393-EEFCD3981E00}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,10 @@ Global
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
