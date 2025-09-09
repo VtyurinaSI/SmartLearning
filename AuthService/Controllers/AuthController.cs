@@ -23,6 +23,7 @@ public class AuthController : ControllerBase
         {
             var token = await _authService.RegisterAsync(request);
             return Ok(new { Token = token });
+
         }
         catch (Exception ex)
         {

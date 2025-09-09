@@ -1,8 +1,10 @@
 using AuthService.Data;
 using AuthService.DTOs;
 using AuthService.Models;
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using SmartLearning.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -14,49 +16,53 @@ namespace AuthService.Services
         private readonly UserManager<User> _userManager;
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
-        
+        private readonly IPublishEndpoint _publish;
         public AuthService(
             UserManager<User> userManager,
             AppDbContext context,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IPublishEndpoint publish)
         {
             _userManager = userManager;
             _context = context;
             _configuration = configuration;
+            _publish = publish;
+
         }
-        
+
         public async Task<string> RegisterAsync(RegisterRequest request)
         {
             var user = new User
             {
+                Id = Guid.NewGuid().ToString(),
                 Email = request.Email,
                 UserName = request.Email,
                 FirstName = request.FirstName,
                 LastName = request.LastName
             };
-            
+
             var result = await _userManager.CreateAsync(user, request.Password);
-            
+
             if (!result.Succeeded)
             {
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
-            
+            await _publish.Publish(new UserCreated(Guid.Parse(user.Id), user.UserName!, user.Email!), default);
             return await GenerateJwtToken(user);
         }
-        
+
         public async Task<string> LoginAsync(string email, string password)
         {
             var user = await _userManager.FindByEmailAsync(email);
-            
+
             if (user == null || !await _userManager.CheckPasswordAsync(user, password))
             {
                 throw new Exception("Invalid credentials");
             }
-            
+
             return await GenerateJwtToken(user);
         }
-        
+
         private async Task<string> GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
@@ -66,17 +72,17 @@ namespace AuthService.Services
                 new("firstName", user.FirstName),
                 new("lastName", user.LastName)
             };
-            
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            
+
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryInMinutes"])),
                 signingCredentials: creds);
-            
+
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }

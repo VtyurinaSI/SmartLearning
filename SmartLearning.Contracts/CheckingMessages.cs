@@ -1,5 +1,6 @@
 ﻿namespace SmartLearning.Contracts
 {
+    public record UserCreated(Guid UserId, string Login, string Email);
     public record UpdateProgress(Guid UserId, long TaskId, bool IsCompiledSuccess, bool IsTestedSuccess, bool IsReviewedSuccess);
     public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId);
     public record RecievedForChecking(long TaskId, string OrigCode);

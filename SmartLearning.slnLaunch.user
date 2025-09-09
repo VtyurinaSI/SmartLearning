@@ -25,6 +25,10 @@
       {
         "Path": "AuthService\\AuthService.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "UserService\\UserSvcStub.csproj",
+        "Action": "Start"
       }
     ]
   }

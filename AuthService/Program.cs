@@ -7,10 +7,24 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using AuthService.Services;
+using MassTransit;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMassTransit(x =>
+{
+    x.SetKebabCaseEndpointNameFormatter();
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
 
+        cfg.ConfigureEndpoints(context);
+    });
+});
 // Настройка PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=AuthService;Username=postgres;Password=1234"));

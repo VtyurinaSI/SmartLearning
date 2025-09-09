@@ -14,7 +14,8 @@ internal class UpdateProgressConsumer : IConsumer<UpdateProgress>
     }
     public async Task Consume(ConsumeContext<UpdateProgress> context)
     {
-        await _repo.SaveCheckingAsync(context.Message.UserId,
+        await _repo.SaveCheckingAsync(
+            context.Message.UserId,
             context.Message.TaskId,
             context.Message.IsCompiledSuccess,
             context.Message.IsTestedSuccess,
