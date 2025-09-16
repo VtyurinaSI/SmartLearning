@@ -2,6 +2,7 @@ using GatewayPatterns.SrvApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinIoStub;
@@ -185,7 +186,26 @@ api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, Can
     .WithSummary("Авторизация");
 
 app.MapHealthChecks("/health/ready");
+app.UseDefaultFiles(); 
+app.UseStaticFiles();
+var webRoot = app.Environment.WebRootPath
+              ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uiRoot = Path.Combine(webRoot, "ui");
+Directory.CreateDirectory(uiRoot);
 
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    RequestPath = "/ui",
+    FileProvider = new PhysicalFileProvider(uiRoot)
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    RequestPath = "/ui",
+    FileProvider = new PhysicalFileProvider(uiRoot)
+});
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.Run("http://localhost:5000/");
 
 static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
