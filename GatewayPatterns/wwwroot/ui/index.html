@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SmartLearning UI — Gateway</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src *">
+  <style>
+    :root { --bg:#0b0c10; --card:#14161a; --ink:#e9edf1; --muted:#9aa4af; --brand:#15a2ff; --ok:#18c964; --bad:#ff5d5d; --border:#24282f; }
+    * { box-sizing:border-box; }
+    html,body{height:100%}
+    body{ margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; color:var(--ink); background:linear-gradient(180deg,#0b0c10,#0e1116); }
+    header{ position:sticky; top:0; background:rgba(11,12,16,.7); backdrop-filter:saturate(1.1) blur(8px); border-bottom:1px solid var(--border); z-index:10; }
+    .container{ max-width:1024px; margin:0 auto; padding:14px 16px; }
+    h1{ font-size:18px; margin:0; letter-spacing:.2px; }
+    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 8px 24px rgba(0,0,0,.25); }
+    .card h2{ font-size:16px; margin:0 0 8px; }
+    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+    input,textarea{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0f1115; color:var(--ink); outline:none; }
+    textarea{ resize:vertical; min-height:120px; }
+    .row{ display:flex; gap:8px; align-items:center; }
+    .pill{ display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
+    button{ cursor:pointer; border:1px solid var(--border); background:#0f1115; color:var(--ink); padding:10px 12px; border-radius:10px; }
+    button.primary{ background:var(--brand); color:#00111e; border-color:#0e8bd8; font-weight:600; }
+    .muted{ color:var(--muted); }
+    .log{ background:#0a0c10; border:1px dashed var(--border); border-radius:12px; padding:12px; max-height:360px; overflow:auto; }
+    pre{ margin:0; white-space:pre-wrap; word-break:break-word; }
+    code{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; }
+    .footer{ margin:24px 0; color:var(--muted); font-size:12px; text-align:center; }
+    a{ color:var(--brand); text-decoration:none; } a:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container row" style="justify-content:space-between;">
+      <h1>SmartLearning — UI (через Gateway)</h1>
+      <div class="row">
+        <span class="pill">JWT: <span id="jwtStatus" class="muted">нет</span></span>
+        <span class="pill">UserId: <span id="uidStatus" class="muted">нет</span></span>
+        <span class="pill">API: <span id="apiBaseView" class="muted">/api</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- Настройки -->
+      <section class="card">
+        <h2>Настройки</h2>
+        <p class="muted">Если UI хостится <b>внутри Gateway</b>, оставь поле пустым — будет использоваться <code>/api</code>. Если UI запущен отдельно — укажи базовый URL, например <code>http://localhost:5000/api</code>.</p>
+        <label>База API (опционально)</label>
+        <input id="apiBase" placeholder="например, http://localhost:5000/api">
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="saveCfgBtn">Сохранить</button>
+          <button id="resetCfgBtn">Сброс</button>
+        </div>
+      </section>
+
+      <!-- Регистрация -->
+      <section class="card">
+        <h2>Регистрация</h2>
+        <label>Email</label><input id="regEmail" type="email">
+        <label>Имя</label><input id="regFirst">
+        <label>Фамилия</label><input id="regLast">
+        <label>Пароль</label><input id="regPwd" type="password">
+        <label>Повтор пароля</label><input id="regPwd2" type="password">
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="regBtn">Зарегистрировать</button>
+          <button id="clearJwtBtn">Сброс JWT</button>
+        </div>
+        <p class="muted">POST <code>/api/auth/register</code> → <code>{ token }</code></p>
+      </section>
+
+      <!-- Логин -->
+      <section class="card">
+        <h2>Логин</h2>
+        <label>Логин (email)</label><input id="loginLogin">
+        <label>Пароль</label><input id="loginPwd" type="password">
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="loginBtn">Войти</button>
+        </div>
+        <p class="muted">POST <code>/api/auth/login</code> → <code>{ token }</code></p>
+      </section>
+
+      <!-- Прогресс -->
+      <section class="card">
+        <h2>Прогресс пользователя</h2>
+        <p class="muted">Использует <code>Authorization</code> и <code>X-User-Id</code> из JWT.</p>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="progressBtn">Получить прогресс</button>
+        </div>
+        <div id="progressOut" class="muted" style="margin-top:10px"></div>
+      </section>
+
+      <!-- Проверка решения -->
+      <section class="card" style="grid-column:1/-1">
+        <h2>Проверка решения</h2>
+        <div class="grid">
+          <div class="card" style="background:transparent; box-shadow:none">
+            <label>TaskId (число)</label><input id="chkTaskId" type="number">
+            <label>Код</label><textarea id="chkCode" placeholder="// сюда вставь код"></textarea>
+            <div class="row" style="margin-top:10px">
+              <button class="primary" id="checkBtn">Старт /api/orc/check</button>
+            </div>
+          </div>
+          <div class="card" style="background:transparent; box-shadow:none">
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Пинг -->
+      <section class="card">
+        <h2>Пинг через Gateway</h2>
+        <label>Сообщение</label><input id="pingMsg" placeholder="hello">
+        <div class="row" style="margin-top:10px">
+          <button id="pingBtn">GET /api/users/{msg}</button>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer">UI подобран под твой Swagger: <code>/api/auth/register</code>, <code>/api/auth/login</code>, <code>/api/progress/user_progress</code>, <code>/api/orc/check</code>, <code>/api/users/{msg}</code>. Вариант без CORS — положи файлы в <code>GatewayPatterns/wwwroot</code>.</p>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

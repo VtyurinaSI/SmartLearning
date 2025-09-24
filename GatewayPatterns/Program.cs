@@ -2,6 +2,7 @@ using GatewayPatterns.SrvApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinIoStub;
@@ -102,7 +103,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseSerilogRequestLogging(opts =>
@@ -185,7 +189,17 @@ api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, Can
     .WithSummary("Авторизация");
 
 app.MapHealthChecks("/health/ready");
+var webRoot = app.Environment.WebRootPath
+              ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uiRoot = Path.Combine(webRoot, "ui");
+Directory.CreateDirectory(uiRoot);
 
+app.UseFileServer(new FileServerOptions
+{
+    RequestPath = "/ui",
+    FileProvider = new PhysicalFileProvider(uiRoot),
+    EnableDefaultFiles = true 
+});
 app.Run("http://localhost:5000/");
 
 static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
@@ -195,29 +209,3 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
 
-/*static async Task<Guid?> GetUserIdByLoginAsync(string login, ProgressApi pr, CancellationToken ct)
-{
-    using var userIdResp = await pr.GetUserIdAsync(login, ct);
-
-    if (userIdResp.StatusCode == HttpStatusCode.NotFound)
-        return null;
-
-    userIdResp.EnsureSuccessStatusCode();
-
-    Guid userId;
-    var mediaType = userIdResp.Content.Headers.ContentType?.MediaType;
-
-    if (string.Equals(mediaType, "text/plain", StringComparison.OrdinalIgnoreCase))
-    {
-        var s = await userIdResp.Content.ReadAsStringAsync(ct);
-        userId = Guid.Parse(s.Trim('"', ' ', '\n', '\r', '\t'));
-    }
-    else
-    {
-        var uid = await userIdResp.Content.ReadFromJsonAsync<Guid?>(cancellationToken: ct);
-        if (uid is null) return null;
-        userId = uid.Value;
-    }
-    return userId;
-
-}*/
