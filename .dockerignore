@@ -1,0 +1,7 @@
+.git
+**/bin
+**/obj
+**/.vs
+**/*.user
+**/*.swp
+**/*.DS_Store
