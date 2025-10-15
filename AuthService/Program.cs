@@ -11,6 +11,9 @@ using MassTransit;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
@@ -25,7 +28,6 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
-// Настройка PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=AuthService;Username=postgres;Password=1234"));
 

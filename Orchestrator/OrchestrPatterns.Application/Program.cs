@@ -8,7 +8,9 @@ using OrchestrPatterns.Application.Consumers;
 using MinIoStub;
 
 var builder = WebApplication.CreateBuilder();
-
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 builder.Services.AddHealthChecks();
 
 builder.Services.AddEndpointsApiExplorer();

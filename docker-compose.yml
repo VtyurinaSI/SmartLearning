@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
@@ -24,43 +22,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 40
-
-  
+      
   ollama:
     image: ollama/ollama:latest
     ports: ["11434:11434"]
     volumes:
       - ollama:/root/.ollama
 
-  gateway:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: GatewayPatterns/Gateway.csproj            
-    environment:
-      APP_DLL: Gateway.dll
-    depends_on: [users, patterns, llm, orchestrator, progress]
-    ports: ["5000:8080"]
-
   gatewaypatterns:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj
+      args: { PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: GatewayPatterns.dll
     depends_on: [users, patterns, llm, orchestrator, progress]
-    ports: ["5001:8080"]
+    ports: ["5000:8080"]
 
   orchestrator:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj
+      args: { PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: OrchestrPatterns.Application.dll
     depends_on:
       postgres: { condition: service_healthy }
@@ -71,9 +57,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: UserService/UserSvcStub.csproj
+      args: { PROJECT_PATH: UserService/UserSvcStub.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: UserSvcStub.dll
     depends_on:
       postgres: { condition: service_healthy }
@@ -84,9 +70,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: CompilerSevice/CompilerSevice.csproj   
+      args: { PROJECT_PATH: CompilerSevice/CompilerSevice.csproj }   
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: CompilerSevice.dll
     depends_on:
       postgres: { condition: service_healthy }
@@ -97,9 +83,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: LlmService/LlmService.csproj
+      args: { PROJECT_PATH: LlmService/LlmService.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: LlmService.dll
     depends_on:
       postgres: { condition: service_healthy }
@@ -111,9 +97,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: ProgressService/ProgressService.csproj
+      args: { PROJECT_PATH: ProgressService/ProgressService.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: ProgressService.dll
     depends_on:
       postgres: { condition: service_healthy }
@@ -123,9 +109,9 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        PROJECT_PATH: AuthService/AuthService.csproj
+      args: { PROJECT_PATH: AuthService/AuthService.csproj }
     environment:
+      ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: AuthService.dll
     depends_on:
       postgres: { condition: service_healthy }

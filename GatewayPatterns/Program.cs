@@ -16,6 +16,9 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 builder.Services.AddSwaggerGen(c =>
     {
         var jwtScheme = new OpenApiSecurityScheme
