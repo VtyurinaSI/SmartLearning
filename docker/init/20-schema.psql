@@ -1,0 +1,25 @@
+-- Схема для UserProgress (идемпотентно)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS public.users (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  username   text NOT NULL UNIQUE,
+  email      text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.progress (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  lesson_id  text NOT NULL,
+  status     text NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.objectstorage (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  object_key   text NOT NULL UNIQUE,
+  content_type text,
+  size_bytes   bigint,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);

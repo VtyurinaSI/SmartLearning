@@ -6,14 +6,14 @@ services:
       POSTGRES_PASSWORD: 1234
     ports: ["5432:5432"]
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./docker/init:/docker-entrypoint-initdb.d:ro
+        - pgdata:/var/lib/postgresql/data
+        - ./docker/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 3s
-      retries: 40
-
+      retries: 40        
+    
   rabbitmq:
     image: rabbitmq:3-management
     ports: ["5672:5672","15672:15672"]
@@ -22,7 +22,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 40
-
+      
   ollama:
     image: ollama/ollama:latest
     ports: ["11434:11434"]
@@ -46,98 +46,105 @@ services:
         ollama pull "$${m}"
       done
     restart: "no"
-
+    
   gatewaypatterns:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj }
+      args:
+        PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: GatewayPatterns.dll
     depends_on:
-      - users
-      - patterns
-      - llm
-      - orchestrator
-      - progress
+      users:         { condition: service_started }
+      patterns:      { condition: service_started }
+      llm:           { condition: service_started }
+      orchestrator:  { condition: service_started }
+      progress:      { condition: service_started }
     ports: ["5000:8080"]
 
   orchestrator:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj }
+      args:
+        PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: OrchestrPatterns.Application.dll
     depends_on:
-      postgres: { condition: service_healthy }
-      rabbitmq: { condition: service_healthy }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
     ports: ["6000:8080"]
 
   users:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: UserService/UserSvcStub.csproj }
+      args:
+        PROJECT_PATH: UserService/UserSvcStub.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: UserSvcStub.dll
     depends_on:
-      postgres: { condition: service_healthy }
-      rabbitmq: { condition: service_healthy }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
     ports: ["6001:8080"]
 
   patterns:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: CompilerSevice/CompilerSevice.csproj }
+      args:
+        PROJECT_PATH: CompilerSevice/CompilerSevice.csproj 
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: CompilerSevice.dll
     depends_on:
-      postgres: { condition: service_healthy }
-      rabbitmq: { condition: service_healthy }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
     ports: ["6002:8080"]
 
   llm:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: LlmService/LlmService.csproj }
+      args:
+        PROJECT_PATH: LlmService/LlmService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: LlmService.dll
     depends_on:
-      postgres: { condition: service_healthy }
-      rabbitmq: { condition: service_healthy }
-      ollama:   { condition: service_started }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+      ollama:    { condition: service_started }
     ports: ["6003:8080"]
 
   progress:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: ProgressService/ProgressService.csproj }
+      args:
+        PROJECT_PATH: ProgressService/ProgressService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: ProgressService.dll
     depends_on:
-      postgres: { condition: service_healthy }
+      postgres:  { condition: service_healthy }
     ports: ["6010:8080"]
 
   auth:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args: { PROJECT_PATH: AuthService/AuthService.csproj }
+      args:
+        PROJECT_PATH: AuthService/AuthService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: AuthService.dll
     depends_on:
-      postgres: { condition: service_healthy }
+      postgres:  { condition: service_healthy }
     ports: ["6011:8080"]
 
 volumes:

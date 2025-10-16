@@ -29,7 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 	ProjectSection(SolutionItems) = preProject
 		.dockerignore = .dockerignore
 		00-create-dbs.sh = 00-create-dbs.sh
-		10-schema.sql = 10-schema.sql
+		20-schema.psql = 20-schema.psql
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
 	EndProjectSection
