@@ -1,13 +1,14 @@
 using AuthService.Data;
 using AuthService.Models;
+using AuthService.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using System.Text;
-using AuthService.Services;
-using MassTransit;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -94,7 +95,28 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    const int maxAttempts = 10;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            db.Database.Migrate();    
+            logger.LogInformation("EF Core migrations applied.");
+            break;
+        }
+        catch (NpgsqlException ex) when (attempt < maxAttempts)
+        {
+            logger.LogWarning(ex, "DB not ready (attempt {Attempt}/{Max}). Waiting…", attempt, maxAttempts);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(10, attempt * 2)));
+        }
+        catch (Exception ex) when (attempt < maxAttempts)
+        {
+            logger.LogWarning(ex, "Migration failed (attempt {Attempt}/{Max}). Retrying…", attempt, maxAttempts);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(10, attempt * 2)));
+        }
+    }
 }
 
 // Настройка Swagger UI

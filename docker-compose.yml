@@ -145,8 +145,11 @@ services:
       APP_DLL: AuthService.dll
     depends_on:
       postgres:  { condition: service_healthy }
+    volumes:
+      - authkeys:/root/.aspnet/DataProtection-Keys
     ports: ["6011:8080"]
 
 volumes:
   pgdata:
   ollama:
+  authkeys:
