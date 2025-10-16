@@ -1,5 +1,7 @@
 using MassTransit;
+using Npgsql;
 using ProgressService;
+using System.Data;
 using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? builder.Configuration.GetConnectionString("ObjectStorage");
+
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddUserProgressDb(builder.Configuration);
 builder.Services.AddMassTransit(x =>
@@ -18,11 +28,12 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        var mq = builder.Configuration.GetSection("RabbitMq");
+        cfg.Host(mq["Host"] ?? "rabbitmq", mq["VirtualHost"] ?? "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
-        });
+            h.Username(mq["UserName"] ?? "guest");
+            h.Password(mq["Password"] ?? "guest");
+        }); ;
 
         cfg.ConfigureEndpoints(context);
     });
@@ -64,7 +75,7 @@ app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepositor
     UserProgress prog = new(compl, inp, next);
     return Results.Json(prog);
 });
-app.Run("http://localhost:6010");
+app.Run();
 public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks, long NextTask);
 public record ComplitedTasks(long TaskId);
 public record InProcessTasks(long TaskId, string NextCheckingStage);

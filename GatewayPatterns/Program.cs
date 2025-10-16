@@ -6,19 +6,28 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinIoStub;
+using Npgsql;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
+using System.Data;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? builder.Configuration.GetConnectionString("ObjectStorage");
+
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
+builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
     {
         var jwtScheme = new OpenApiSecurityScheme
@@ -50,20 +59,20 @@ builder.Services.AddHeaderPropagation(o =>
 });
 builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 builder.Services.AddHttpClient<UsersApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"] ?? "http://localhost:6001/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"]))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<ProgressApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"] ?? "http://localhost:6010/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<PatternsApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"] ?? "http://localhost:6002/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"]))
     .AddHeaderPropagation();
 
 builder.Services.AddHttpClient<OrchApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"] ?? "http://localhost:6000/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<AuthApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"] ?? "http://localhost:5164/"))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]))
     .AddHeaderPropagation();
 
 builder.Host.UseSerilog((ctx, lc) =>
@@ -181,7 +190,7 @@ api.MapPost("/auth/register", async ([FromBody] RegisterRequest req, AuthApi aut
     return await Proxy(resp, ct);
 })
     .AllowAnonymous()
-.WithSummary("Регистрация нового пользователя"); 
+.WithSummary("Регистрация нового пользователя");
 
 api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, CancellationToken ct) =>
 {
@@ -201,9 +210,9 @@ app.UseFileServer(new FileServerOptions
 {
     RequestPath = "/ui",
     FileProvider = new PhysicalFileProvider(uiRoot),
-    EnableDefaultFiles = true 
+    EnableDefaultFiles = true
 });
-app.Run("http://localhost:5000/");
+app.Run();
 
 static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
 {

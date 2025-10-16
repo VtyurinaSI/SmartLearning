@@ -14,22 +14,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(cs));
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        var mq = builder.Configuration.GetSection("RabbitMq");
+        cfg.Host(mq["Host"] ?? "rabbitmq", mq["VirtualHost"] ?? "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(mq["UserName"] ?? "guest");
+            h.Password(mq["Password"] ?? "guest");
         });
 
         cfg.ConfigureEndpoints(context);
     });
 });
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5432;Database=AuthService;Username=postgres;Password=1234"));
+
 
 // Упрощенная Identity конфигурация
 builder.Services.AddIdentityCore<User>()

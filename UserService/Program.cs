@@ -2,15 +2,24 @@
 using HealthChecks.UI.Client;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Npgsql;
 using ProgressService;
+using System.Data;
 using UserSvcStub;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
-builder.Services.AddControllers();
+
 builder.Services.AddUserProgressDb(builder.Configuration);
+
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? builder.Configuration.GetConnectionString("ObjectStorage");
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
+
+builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 builder.Services.AddMassTransit(x =>
 {
@@ -20,10 +29,11 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        var mq = builder.Configuration.GetSection("RabbitMq");
+        cfg.Host(mq["Host"] ?? "rabbitmq", mq["VirtualHost"] ?? "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(mq["UserName"] ?? "guest");
+            h.Password(mq["Password"] ?? "guest");
         });
 
         cfg.ConfigureEndpoints(context);
@@ -48,4 +58,4 @@ app.MapGet("/ping", (HttpContext ctx) =>
     Console.WriteLine($"[users-svc] modified: {echo}");
     return Results.Json(new { svc = "users", got = echo });
 });
-app.Run("http://localhost:6001");
+app.Run();
