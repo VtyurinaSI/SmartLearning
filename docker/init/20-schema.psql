@@ -1,25 +1,39 @@
--- РЎС…РµРјР° РґР»СЏ UserProgress (РёРґРµРјРїРѕС‚РµРЅС‚РЅРѕ)
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- расширение для UUID
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- === users (как в коде) ===
 CREATE TABLE IF NOT EXISTS public.users (
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  username   text NOT NULL UNIQUE,
-  email      text,
-  created_at timestamptz NOT NULL DEFAULT now()
+  user_id         uuid PRIMARY KEY,
+  user_login      text NOT NULL,
+  email           text,
+  user_loc        text,
+  user_prog_lang  text
 );
 
+-- === progress (FK на users.user_id) ===
 CREATE TABLE IF NOT EXISTS public.progress (
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  lesson_id  text NOT NULL,
-  status     text NOT NULL,
-  updated_at timestamptz NOT NULL DEFAULT now()
+  user_id    uuid   NOT NULL,
+  task_id    bigint NOT NULL,
+  task_name  text,
+  compile    boolean NOT NULL DEFAULT false,
+  test       boolean NOT NULL DEFAULT false,
+  review     boolean NOT NULL DEFAULT false,
+  CONSTRAINT progress_pk PRIMARY KEY (user_id, task_id),
+  CONSTRAINT progress_user_fk
+    FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
 );
 
+-- === objectstorage (FK на users.user_id) ===
 CREATE TABLE IF NOT EXISTS public.objectstorage (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  object_key   text NOT NULL UNIQUE,
-  content_type text,
-  size_bytes   bigint,
-  created_at   timestamptz NOT NULL DEFAULT now()
+  checking_id uuid PRIMARY KEY,
+  user_id     uuid NOT NULL,
+  orig_code   text,
+  compil_res  text,
+  test_res    text,
+  review_res  text,
+  uploaded_at timestamptz,
+  CONSTRAINT objectstorage_user_fk
+    FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS ix_objectstorage_user_id ON public.objectstorage(user_id);

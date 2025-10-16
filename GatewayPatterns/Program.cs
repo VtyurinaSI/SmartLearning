@@ -112,14 +112,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.RoutePrefix = "swagger";
     });
-}
+
 
 app.UseSerilogRequestLogging(opts =>
 {
@@ -152,6 +151,21 @@ app.Use(async (ctx, next) =>
     await next();
 });
 var api = app.MapGroup("/api");
+api.MapPost("/file", ([FromForm] IFormFile file) =>
+{
+
+    return Results.Ok($"Получили {file.FileName}!");
+})
+    .DisableAntiforgery()
+   .Accepts<IFormFile>("multipart/form-data")
+   .Produces(StatusCodes.Status200OK)
+   .WithOpenApi();
+
+api.MapGet("/ping", () =>
+{
+    return "pong";
+})
+.WithSummary("Отправка команды в UserService // заглушка");
 
 api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, CancellationToken ct) =>
 {

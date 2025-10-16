@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE IF NOT EXISTS public.users (
   user_id         uuid PRIMARY KEY,
   user_login      text NOT NULL,

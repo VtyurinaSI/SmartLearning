@@ -1,7 +1,8 @@
 #!/bin/sh
 set -eux
 
-echo ">> creating databases if missing"
+docker compose down -v --remove-orphans
+
 createdb -U "$POSTGRES_USER" AuthService   2>/dev/null || true
 createdb -U "$POSTGRES_USER" UserProgress  2>/dev/null || true
 createdb -U "$POSTGRES_USER" PatternsMinIO 2>/dev/null || true
