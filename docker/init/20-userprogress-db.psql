@@ -1,3 +1,4 @@
+
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS public.users (
@@ -7,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   user_loc        text,
   user_prog_lang  text
 );
+
 
 CREATE TABLE IF NOT EXISTS public.progress (
   user_id    uuid   NOT NULL,
@@ -19,17 +21,3 @@ CREATE TABLE IF NOT EXISTS public.progress (
   CONSTRAINT progress_user_fk
     FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS public.objectstorage (
-  checking_id uuid PRIMARY KEY,
-  user_id     uuid NOT NULL,
-  orig_code   text,
-  compil_res  text,
-  test_res    text,
-  review_res  text,
-  uploaded_at timestamptz,
-  CONSTRAINT objectstorage_user_fk
-    FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS ix_objectstorage_user_id ON public.objectstorage(user_id);

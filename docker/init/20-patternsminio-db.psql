@@ -1,0 +1,13 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS public.objectstorage (
+  checking_id uuid PRIMARY KEY,
+  user_id     uuid NOT NULL,
+  orig_code   text,
+  compil_res  text,
+  test_res    text,
+  review_res  text,
+  uploaded_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_objectstorage_user_id ON public.objectstorage(user_id);
