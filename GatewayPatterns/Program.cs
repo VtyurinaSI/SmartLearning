@@ -1,3 +1,4 @@
+using GatewayPatterns;
 using GatewayPatterns.SrvApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,8 @@ var cs = builder.Configuration.GetConnectionString("ObjectStorage");
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 builder.Services.AddEndpointsApiExplorer();
+
+
 
 builder.Services.AddSwaggerGen(c =>
     {
@@ -70,6 +73,10 @@ builder.Services.AddHttpClient<OrchApi>(c =>
 builder.Services.AddHttpClient<AuthApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]))
     .AddHeaderPropagation();
+builder.Services.AddHttpClient<IObjectStorageClient, ObjectStorageClient>(c =>
+{
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://storage:8080/"
+});
 
 builder.Host.UseSerilog((ctx, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
@@ -108,11 +115,11 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.RoutePrefix = "swagger";
-    });
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.RoutePrefix = "swagger";
+});
 
 
 app.UseSerilogRequestLogging(opts =>
@@ -179,11 +186,13 @@ api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, Ca
     .RequireAuthorization()
 .WithSummary("Запрос прогресса пользователя");
 
-api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, HttpContext ctx, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct) =>
+api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, HttpContext ctx, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct,
+    IObjectStorageClient minio) =>
 {
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
+    await minio.SaveOrigCodeAsync(msg.OrigCode, userId, checkingId, ct);
 
     using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
 

@@ -31,10 +31,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 		00-create-dbs.sh = 00-create-dbs.sh
 		20-patternsminio.psql = 20-patternsminio.psql
 		20-schema.psql = 20-schema.psql
-		30-init-minio.sh = 30-init-minio.sh
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectStorageService", "ObjectStorageService\ObjectStorageService.csproj", "{99D45FCE-2461-4D8E-BAF7-54B291966DC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,6 +83,10 @@ Global
 		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78580638-1A2C-48C5-B393-EEFCD3981E00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99D45FCE-2461-4D8E-BAF7-54B291966DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99D45FCE-2461-4D8E-BAF7-54B291966DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99D45FCE-2461-4D8E-BAF7-54B291966DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99D45FCE-2461-4D8E-BAF7-54B291966DC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
