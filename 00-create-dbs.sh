@@ -11,4 +11,7 @@ echo ">> applying schema to UserProgress"
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d UserProgress \
      -f /docker-entrypoint-initdb.d/20-schema.psql
 
+echo ">> applying schema: PatternsMinIO"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d PatternsMinIO -f /docker-entrypoint-initdb.d/20-patternsminio.sql
+
 echo ">> done"

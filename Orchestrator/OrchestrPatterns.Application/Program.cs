@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder();
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
-var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+var cs = builder.Configuration.GetConnectionString("ConnectionStrings")
          ?? builder.Configuration.GetConnectionString("ObjectStorage");
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;

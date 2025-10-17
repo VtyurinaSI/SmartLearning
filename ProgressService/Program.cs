@@ -10,8 +10,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 
-var cs = builder.Configuration.GetConnectionString("DefaultConnection")
-         ?? builder.Configuration.GetConnectionString("ObjectStorage");
+var cs =  builder.Configuration.GetConnectionString("ObjectStorage");
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
