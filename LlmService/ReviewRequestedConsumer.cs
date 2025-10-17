@@ -38,7 +38,7 @@ namespace LlmService
                     """ + origCode;
 
                 var request = new ChatRequest(
-                    model: "qwen2.5-coder:14b",
+                    model: "llama3.1",//"qwen2.5-coder:7b",
                     messages: new[] { new ChatMessage("user", userPrompt) }
                 );
 
