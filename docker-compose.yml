@@ -58,7 +58,6 @@ services:
       APP_DLL: GatewayPatterns.dll
     depends_on:
       users:         { condition: service_started }
-      patterns:      { condition: service_started }
       llm:           { condition: service_started }
       orchestrator:  { condition: service_started }
       progress:      { condition: service_started }
@@ -92,7 +91,7 @@ services:
       rabbitmq:  { condition: service_healthy }
     ports: ["6001:8080"]
 
-  patterns:
+  compiler:
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -104,7 +103,7 @@ services:
     depends_on:
       postgres:  { condition: service_healthy }
       rabbitmq:  { condition: service_healthy }
-    ports: ["6002:8080"]
+    ports: ["6002:8080"]  
 
   llm:
     build:

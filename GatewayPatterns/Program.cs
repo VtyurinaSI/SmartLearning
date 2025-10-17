@@ -63,9 +63,6 @@ builder.Services.AddHttpClient<UsersApi>(c =>
 builder.Services.AddHttpClient<ProgressApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]))
     .AddHeaderPropagation();
-builder.Services.AddHttpClient<PatternsApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"]))
-    .AddHeaderPropagation();
 
 builder.Services.AddHttpClient<OrchApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]))
@@ -84,7 +81,6 @@ builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck("gateway_self", () => HealthCheckResult.Healthy("OK"))
     .AddUrlGroup(new Uri($"{builder.Configuration["Downstream:Users"]}health/ready"), name: "users_svc")
-    .AddUrlGroup(new Uri($"{builder.Configuration["Downstream:Patterns"]}health/ready"), name: "patterns_svc")
     .AddUrlGroup(new Uri($"{builder.Configuration["Downstream:Llm"]}health/ready"), name: "llm_svc");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>

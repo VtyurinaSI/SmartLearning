@@ -6,9 +6,6 @@ namespace MinIoStub
 {
     public class ObjectStorageRepository : IObjectStorageRepository
     {
-        private readonly NpgsqlDataSource _ds;
-        private readonly ILogger<ObjectStorageRepository> _log;
-
         public ObjectStorageRepository(NpgsqlDataSource ds, ILogger<ObjectStorageRepository> log)
         {
             _ds = ds;
@@ -16,35 +13,22 @@ namespace MinIoStub
             _log.LogInformation("ObjectStorageRepository создан");
         }
 
-        public async Task<Guid> SaveOrigCodeAsync(string origCode, Guid userId, CancellationToken ct)
-        {
-            var checkingId = Guid.NewGuid();
-
-            const string sql = """
-            insert into public.objectstorage (checking_id, user_id, orig_code)
-            values (@CheckingId, @UserId, @OrigCode);
-            """;
-
-            await using var conn = await _ds.OpenConnectionAsync(ct);
-
-            var args = new { CheckingId = checkingId, UserId = userId, OrigCode = origCode };
-            await conn.ExecuteAsync(new CommandDefinition(sql, args, cancellationToken: ct));
-
-            _log.LogInformation("Saved source. checking_id={CheckingId} user_id={UserId}", checkingId, userId);
-            return checkingId;
-        }
-        public async Task<string?> ReadReviewAsync(Guid checkingId, CancellationToken ct)
+        private readonly NpgsqlDataSource _ds;
+        private readonly ILogger<ObjectStorageRepository> _log;
+        public async Task<string?> ReadCompilationAsync(Guid checkingId, CancellationToken ct)
         {
             const string sql = """
-            select review_res
+            select compil_res
             from public.objectstorage
             where checking_id = @CheckingId
             """;
-
+            _log.LogInformation("[Read Compilation] SQL: {sql}", sql);
             await using var conn = await _ds.OpenConnectionAsync(ct);
             return await conn.QuerySingleOrDefaultAsync<string?>(
                 new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
+
         }
+
         public async Task<string?> ReadOrigCodeAsync(Guid checkingId, CancellationToken ct)
         {
             const string sql = """
@@ -52,22 +36,24 @@ namespace MinIoStub
             from public.objectstorage
             where checking_id = @CheckingId
             """;
+            _log.LogInformation("[Read Orig Code] SQL: {sql}", sql);
 
             await using var conn = await _ds.OpenConnectionAsync(ct);
             return await conn.QuerySingleOrDefaultAsync<string?>(
                 new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
         }
-        public async Task SaveReviewAsync(Guid checkingId, string review, CancellationToken ct)
+
+        public async Task<string?> ReadReviewAsync(Guid checkingId, CancellationToken ct)
         {
             const string sql = """
-            update public.objectstorage
-            set review_res = @ReviewRes
+            select review_res
+            from public.objectstorage
             where checking_id = @CheckingId
             """;
-
+            _log.LogInformation("[Read Review] SQL: {sql}", sql);
             await using var conn = await _ds.OpenConnectionAsync(ct);
-            await conn.QuerySingleOrDefaultAsync<string?>(
-               new CommandDefinition(sql, new { CheckingId = checkingId, ReviewRes = review }, cancellationToken: ct));
+            return await conn.QuerySingleOrDefaultAsync<string?>(
+                new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
         }
 
         public async Task SaveCompilationAsync(Guid checkingId, string compileRes, CancellationToken ct)
@@ -84,18 +70,36 @@ namespace MinIoStub
 
         }
 
-        public async Task<string?> ReadCompilationAsync(Guid checkingId, CancellationToken ct)
+        public async Task<Guid> SaveOrigCodeAsync(string origCode, Guid userId, CancellationToken ct)
+        {
+
+            var checkingId = Guid.NewGuid();
+
+            const string sql = """
+            insert into public.objectstorage (checking_id, user_id, orig_code)
+            values (@CheckingId, @UserId, @OrigCode);
+            """;
+
+            await using var conn = await _ds.OpenConnectionAsync(ct);
+
+            var args = new { CheckingId = checkingId, UserId = userId, OrigCode = origCode };
+            _log.LogInformation("[Saving Orig Code] SQL: {sql}, data:\ncheckingId: {checkingId}, userId: {userId}, origCode: {origCode}", sql, checkingId, userId, origCode.Substring(0, Math.Min(100, origCode.Length)));
+            await conn.ExecuteAsync(new CommandDefinition(sql, args, cancellationToken: ct));
+
+            _log.LogInformation("Saved source. checking_id={CheckingId} user_id={UserId}", checkingId, userId);
+            return checkingId;
+        }
+        public async Task SaveReviewAsync(Guid checkingId, string review, CancellationToken ct)
         {
             const string sql = """
-            select compil_res
-            from public.objectstorage
+            update public.objectstorage
+            set review_res = @ReviewRes
             where checking_id = @CheckingId
             """;
 
             await using var conn = await _ds.OpenConnectionAsync(ct);
-            return await conn.QuerySingleOrDefaultAsync<string?>(
-                new CommandDefinition(sql, new { CheckingId = checkingId }, cancellationToken: ct));
-
+            await conn.QuerySingleOrDefaultAsync<string?>(
+               new CommandDefinition(sql, new { CheckingId = checkingId, ReviewRes = review }, cancellationToken: ct));
         }
     }
 }
