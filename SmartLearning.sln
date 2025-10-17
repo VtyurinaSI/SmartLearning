@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 		00-create-dbs.sh = 00-create-dbs.sh
 		20-patternsminio.psql = 20-patternsminio.psql
 		20-schema.psql = 20-schema.psql
+		30-init-minio.sh = 30-init-minio.sh
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
 	EndProjectSection
