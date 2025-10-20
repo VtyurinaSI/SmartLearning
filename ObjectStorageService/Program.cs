@@ -1,62 +1,115 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Minio;
 using Minio.DataModel.Args;
 using ObjectStorageService;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Options
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
 var opts = builder.Configuration.GetSection("Storage").Get<StorageOptions>()!;
 
-// MinIO клиент
-var minio = new MinioClient()
-    .WithEndpoint(new Uri(opts.Endpoint).Host, new Uri(opts.Endpoint).Port)
-    .WithCredentials(opts.AccessKey, opts.SecretKey)
-    .WithSSL(opts.Endpoint.StartsWith("https", StringComparison.OrdinalIgnoreCase))
-    .Build();
-builder.Services.AddSingleton(minio);
-builder.Services.AddSingleton(opts);
-
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// MinIO client
+var uri = new Uri(opts.Endpoint);
+var mcBuilder = new MinioClient()
+    .WithEndpoint(uri.Host, uri.Port)
+    .WithCredentials(opts.AccessKey, opts.SecretKey);
+
+if (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+    mcBuilder = mcBuilder.WithSSL();
+
+var mc = mcBuilder.Build();
+
+builder.Services.AddSingleton<IMinioClient>(mc);
+builder.Services.AddSingleton(opts);
+
 var app = builder.Build();
+
+// Ensure bucket exists
+await EnsureBucketAsync(mc, opts.Bucket);
+
+// Swagger UI
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapPost("/objects/orig-code", async ([FromQuery] Guid checkingId, [FromQuery] Guid userId, [FromBody] string origCode,
-                                         IMinioClient mc, StorageOptions o, CancellationToken ct) =>
+app.MapPost("/objects/text", async (
+    [FromQuery] string file,
+    [FromBody] string content,
+    IMinioClient minio,
+    StorageOptions o,
+    CancellationToken ct) =>
+{
+    var objName = $"{file}.txt";
+    using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+    await minio.PutObjectAsync(new PutObjectArgs()
+        .WithBucket(o.Bucket)
+        .WithObject(objName)
+        .WithStreamData(ms)
+        .WithObjectSize(ms.Length)
+        .WithContentType("text/plain"), ct);
+
+    return Results.Ok(new { bucket = o.Bucket, objectName = objName });
+})
+.WithName("UploadArbitraryText")
+.WithOpenApi();
+
+app.MapPost("/objects/orig-code", async (
+    [FromQuery] Guid checkingId,
+    [FromQuery] Guid userId, // сейчас не используем
+    [FromBody] string origCode,
+    IMinioClient minio,
+    StorageOptions o,
+    CancellationToken ct) =>
 {
     var objName = $"orig/{checkingId}.txt";
     using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(origCode));
-    await mc.PutObjectAsync(new PutObjectArgs()
+    await minio.PutObjectAsync(new PutObjectArgs()
         .WithBucket(o.Bucket)
         .WithObject(objName)
         .WithStreamData(ms)
         .WithObjectSize(ms.Length)
-        .WithContentType("text/plain; charset=utf-8"), ct);
-    return Results.Ok(new { checkingId, userId, objectName = objName });
-});
+        .WithContentType("text/plain"), ct);
 
-app.MapPost("/objects/review", async ([FromQuery] Guid checkingId, [FromBody] string review,
-                                      IMinioClient mc, StorageOptions o, CancellationToken ct) =>
+    return Results.Ok(new { checkingId });
+})
+.WithName("SaveOrigCode")
+.WithOpenApi();
+
+app.MapPost("/objects/review", async (
+    [FromQuery] Guid checkingId,
+    [FromBody] string review,
+    IMinioClient minio,
+    StorageOptions o,
+    CancellationToken ct) =>
 {
     var objName = $"review/{checkingId}.txt";
     using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(review));
-    await mc.PutObjectAsync(new PutObjectArgs()
+    await minio.PutObjectAsync(new PutObjectArgs()
         .WithBucket(o.Bucket)
         .WithObject(objName)
         .WithStreamData(ms)
         .WithObjectSize(ms.Length)
-        .WithContentType("text/plain; charset=utf-8"), ct);
-    return Results.Ok(new { checkingId, objectName = objName });
-});
+        .WithContentType("text/plain"), ct);
 
-app.MapGet("/objects/orig-code/{checkingId:guid}", async (Guid checkingId, IMinioClient mc, StorageOptions o, CancellationToken ct) =>
+    return Results.Ok(new { checkingId });
+})
+.WithName("SaveReview")
+.WithOpenApi();
+
+app.MapGet("/objects/orig-code", async (
+    [FromQuery] Guid checkingId,
+    IMinioClient minio,
+    StorageOptions o,
+    CancellationToken ct) =>
 {
     var objName = $"orig/{checkingId}.txt";
     string? text = null;
-    await mc.GetObjectAsync(new GetObjectArgs()
+
+    await minio.GetObjectAsync(new GetObjectArgs()
         .WithBucket(o.Bucket)
         .WithObject(objName)
         .WithCallbackStream(s =>
@@ -64,14 +117,22 @@ app.MapGet("/objects/orig-code/{checkingId:guid}", async (Guid checkingId, IMini
             using var sr = new StreamReader(s);
             text = sr.ReadToEnd();
         }), ct);
-    return text is null ? Results.NotFound() : Results.Ok(text);
-});
 
-app.MapGet("/objects/review/{checkingId:guid}", async (Guid checkingId, IMinioClient mc, StorageOptions o, CancellationToken ct) =>
+    return text is null ? Results.NotFound() : Results.Ok(text);
+})
+.WithName("ReadOrigCode")
+.WithOpenApi();
+
+app.MapGet("/objects/review", async (
+    [FromQuery] Guid checkingId,
+    IMinioClient minio,
+    StorageOptions o,
+    CancellationToken ct) =>
 {
     var objName = $"review/{checkingId}.txt";
     string? text = null;
-    await mc.GetObjectAsync(new GetObjectArgs()
+
+    await minio.GetObjectAsync(new GetObjectArgs()
         .WithBucket(o.Bucket)
         .WithObject(objName)
         .WithCallbackStream(s =>
@@ -79,7 +140,17 @@ app.MapGet("/objects/review/{checkingId:guid}", async (Guid checkingId, IMinioCl
             using var sr = new StreamReader(s);
             text = sr.ReadToEnd();
         }), ct);
+
     return text is null ? Results.NotFound() : Results.Ok(text);
-});
+})
+.WithName("ReadReview")
+.WithOpenApi();
 
 app.Run();
+
+static async Task EnsureBucketAsync(IMinioClient mc, string bucket)
+{
+    var exists = await mc.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
+    if (!exists)
+        await mc.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket));
+}

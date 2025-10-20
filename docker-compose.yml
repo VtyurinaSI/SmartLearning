@@ -1,4 +1,53 @@
 services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"  
+      - "9001:9001"   
+    healthcheck:
+      test: ["CMD", "bash", "-c", "mc --version >/dev/null 2>&1 || (apk add --no-cache curl >/dev/null 2>&1 && curl -f http://localhost:9000/minio/health/live)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ALIAS: local
+      MINIO_BUCKET: smartlearning
+    volumes:
+      - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
+    entrypoint: ["/bin/sh","-c","chmod +x /init/30-init-minio.sh && /init/30-init-minio.sh"]
+
+  object-storage-service:
+    build:
+      context: ./SmartLearning/ObjectStorageService
+      dockerfile: Dockerfile
+    container_name: object-storage-service
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Docker
+    depends_on:
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "6005:8080"
   postgres:
     image: postgres:16
     environment:
@@ -178,3 +227,4 @@ volumes:
   ollama:
   authkeys:
   minio_data:
+
