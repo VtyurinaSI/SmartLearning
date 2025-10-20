@@ -13,7 +13,7 @@ mc alias set "$MINIO_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PA
 
 i=0
 until mc ls "$MINIO_ALIAS" >/dev/null 2>&1; do
-  i=$((i+1)); [ $i -gt 60 ] && echo "MinIO not ready" && exit 1
+  i=$((i+1)); [ $i -gt 120 ] && echo "MinIO not ready" && exit 1
   sleep 1
 done
 

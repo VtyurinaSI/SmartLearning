@@ -1,4 +1,161 @@
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 40        
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672","15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama:/root/.ollama
+    command: ["serve"]   
+    healthcheck:
+      test: ["CMD", "sh", "-lc", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  ollama-pull-llama:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: ["-fsS","-X","POST","-H","Content-Type: application/json","-d","{\"name\":\"llama3.1\"}","http://ollama:11434/api/pull"]
+    restart: "no"
+
+  gatewaypatterns:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: GatewayPatterns.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      users:         { condition: service_started }
+      llm:           { condition: service_started }
+      orchestrator:  { condition: service_started }
+      progress:      { condition: service_started }
+    ports: ["5000:8080"]
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: OrchestrPatterns.Application.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    ports: ["6000:8080"]
+
+  users:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: UserService/UserSvcStub.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: UserSvcStub.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    ports: ["6001:8080"]
+
+  compiler:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: CompilerSevice/CompilerSevice.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: CompilerSevice.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    ports: ["6002:8080"]  
+
+  llm:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: LlmService/LlmService.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: LlmService.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+      ollama:    { condition: service_started }      
+    ports: ["6003:8080"]
+
+  progress:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: ProgressService/ProgressService.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: ProgressService.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+    ports: ["6010:8080"]
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: AuthService/AuthService.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: AuthService.dll
+    depends_on:
+      ollama-pull-llama: { condition: service_completed_successfully }
+      postgres:  { condition: service_healthy }
+    volumes:
+      - authkeys:/root/.aspnet/DataProtection-Keys
+    ports: ["6011:8080"]
+    
+
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -9,8 +166,8 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web-консоль
+      - "9000:9000"   
+      - "9001:9001"   
 
   minio-init:
     image: minio/mc:latest
@@ -26,32 +183,27 @@ services:
       MINIO_BUCKET: smartlearning
     volumes:
       - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
-    entrypoint: ["/bin/sh","-c","chmod +x /init/30-init-minio.sh && /init/30-init-minio.sh"]
+    entrypoint: ["/bin/sh","-c","tr -d '\\r' < /init/30-init-minio.sh > /tmp/init.sh && chmod +x /tmp/init.sh && /tmp/init.sh"]
 
   object-storage-service:
     build:
-      context: .                 # корень репо
-      dockerfile: ./Dockerfile   # единый Dockerfile для всех сервисов
+      context: .
+      dockerfile: ./Dockerfile
       args:
-        PROJECT_PATH: SmartLearning/ObjectStorageService/ObjectStorageService.csproj
-        DLL_NAME: ObjectStorageService.dll
-        CONFIGURATION: Release
-    container_name: object-storage-service
+        PROJECT_PATH: ObjectStorageService/ObjectStorageService.csproj
     environment:
-      ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Docker
-      # Можно убрать блок Storage__* и держать их в appsettings.Docker.json.
-      Storage__Endpoint: http://minio:9000
-      Storage__AccessKey: minioadmin
-      Storage__SecretKey: minioadmin
-      Storage__Bucket: smartlearning
+      ASPNETCORE_URLS: http://+:8080
+      APP_DLL: ObjectStorageService.dll 
     depends_on:
       minio:
         condition: service_started
       minio-init:
         condition: service_completed_successfully
-    ports:
-      - "6005:8080"
+    ports: ["6005:8080"]
 
 volumes:
+  pgdata:
+  ollama:
+  authkeys:
   minio_data:
