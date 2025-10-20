@@ -33,8 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 		20-schema.psql = 20-schema.psql
 		30-init-minio.sh = 30-init-minio.sh
 		docker-compose.yml = docker-compose.yml
-		Dockerfil = Dockerfil
 		Dockerfile = Dockerfile
+		entrypoint.sh = entrypoint.sh
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectStorageService", "ObjectStorageService\ObjectStorageService.csproj", "{99D45FCE-2461-4D8E-BAF7-54B291966DC2}"
