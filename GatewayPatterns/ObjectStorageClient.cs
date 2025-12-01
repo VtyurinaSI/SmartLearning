@@ -1,4 +1,6 @@
 ﻿
+using SmartLearning.Contracts;
+
 namespace GatewayPatterns
 {
     public class ObjectStorageClient : IObjectStorageClient
@@ -6,10 +8,18 @@ namespace GatewayPatterns
         private readonly HttpClient _http;
         public ObjectStorageClient(HttpClient http) => _http = http;
 
-        public async Task<Guid> SaveOrigCodeAsync(string origCode, Guid userId, Guid checkingId, CancellationToken ct)
+        public async Task<Guid> SaveOrigCodeAsync(RecievedForChecking origCode, Guid userId, Guid checkingId, CancellationToken ct)
         {
-            var resp = await _http.PostAsync($"/objects/orig-code?checkingId={checkingId}&userId={userId}",
-                new StringContent(origCode, System.Text.Encoding.UTF8, "text/plain"), ct);
+
+            var url =
+                $"/objects/load/file" +
+                $"?userId={userId}" +
+                $"&taskId={origCode.TaskId}"+
+                $"&name={"file1"}";
+
+            var resp = await _http.PostAsync(url,
+                new StringContent(origCode.OrigCode, System.Text.Encoding.UTF8, "text/plain"),
+                ct);
             resp.EnsureSuccessStatusCode();
             return checkingId;
         }

@@ -75,7 +75,7 @@ builder.Services.AddHttpClient<AuthApi>(c =>
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<IObjectStorageClient, ObjectStorageClient>(c =>
 {
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://storage:8080/"
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://object-storage-service:8080/"
 });
 
 builder.Host.UseSerilog((ctx, lc) =>
@@ -192,7 +192,7 @@ api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, HttpContext
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
-    await minio.SaveOrigCodeAsync(msg.OrigCode, userId, checkingId, ct);
+    await minio.SaveOrigCodeAsync(msg, userId, checkingId, ct);
 
     using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
 

@@ -23,6 +23,17 @@ if (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
 var mc = mcBuilder.Build();
 builder.Services.AddSingleton<IMinioClient>(mc);
 builder.Services.AddSingleton(opts);
+var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug)
+    .AddSimpleConsole(opt =>
+    {
+        opt.TimestampFormat = "HH:mm:ss.fff ";
+        opt.UseUtcTimestamp = true;
+        opt.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+        opt.SingleLine = true;
+    }));
+
+
+ILogger<Program> log = factory.CreateLogger<Program>();
 
 var app = builder.Build();
 
@@ -33,23 +44,29 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapPost("/objects/{stage}/file", async (
+    HttpRequest req,
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
     [FromQuery] string? name,
-    [FromBody] string body,          
-    HttpRequest req,
     IMinioClient minio,
     StorageOptions o,
     CancellationToken ct) =>
 {
-    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: build|reflect|llm");
+    if (!TryParseStage(stage, out var s))
+        return Results.BadRequest("stage must be: load|build|reflect|llm");
+
+    using var reader = new StreamReader(req.Body, Encoding.UTF8);
+    var body = await reader.ReadToEndAsync(ct);
 
     var fileName = string.IsNullOrWhiteSpace(name)
         ? $"{DateTime.UtcNow:yyyyMMdd_HHmmssfff}.txt"
         : name;
 
-    var contentType = string.IsNullOrWhiteSpace(req.ContentType) ? "text/plain" : req.ContentType;
+    var contentType = string.IsNullOrWhiteSpace(req.ContentType)
+        ? "text/plain"
+        : req.ContentType;
+
     var bytes = Encoding.UTF8.GetBytes(body);
 
     var key = StorageKeys.File(userId, taskId, s, fileName);
@@ -57,9 +74,6 @@ app.MapPost("/objects/{stage}/file", async (
 
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });
 })
-.Accepts<string>("text/plain")
-.Accepts<string>("application/json")
-.Produces(StatusCodes.Status200OK)
 .WithOpenApi();
 
 app.MapGet("/objects/{stage}/file", async (
@@ -92,7 +106,7 @@ app.MapGet("/objects/{stage}/list", async (
     StorageOptions o,
     CancellationToken ct) =>
 {
-    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: build|reflect|llm");
+    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
 
     var prefix = StorageKeys.StagePrefix(userId, taskId, s) + "/";
     var list = await MinioIo.ListKeysAsync(minio, o.Bucket, prefix, recursive: true, ct);
@@ -122,6 +136,7 @@ static bool TryParseStage(string stage, out CheckStage s)
 {
     switch (stage.ToLowerInvariant())
     {
+        case "load": s = CheckStage.Load; return true;
         case "build": s = CheckStage.Build; return true;
         case "reflect": s = CheckStage.Reflect; return true;
         case "llm": s = CheckStage.Llm; return true;
@@ -137,12 +152,13 @@ static async Task EnsureBucketAsync(IMinioClient mc, string bucket)
 
 
 
-enum CheckStage { Build, Reflect, Llm }
+enum CheckStage { Load, Build, Reflect, Llm }
 
 static class StorageKeys
 {
     public static string StageSegment(CheckStage stage) => stage switch
     {
+        CheckStage.Load => "00-load",
         CheckStage.Build => "01-build",
         CheckStage.Reflect => "02-reflect",
         CheckStage.Llm => "03-llm",
