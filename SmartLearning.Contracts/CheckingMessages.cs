@@ -6,10 +6,10 @@
     public record RecievedForChecking(long TaskId, string OrigCode);
     public record CheckingResults(Guid UserId, Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
 
-    public record StartCompile(Guid CorrelationId);
-    public record StartTests(Guid CorrelationId);
-    public record StartReview(Guid CorrelationId);
-    public record Cancel(Guid CorrelationId);
+    public record StartCompile(Guid CorrelationId, Guid UserId, long TaskId);
+    public record StartTests(Guid CorrelationId, Guid UserId, long TaskId);
+    public record StartReview(Guid CorrelationId, Guid UserId, long TaskId);
+    public record Cancel(Guid CorrelationId, Guid UserId, long TaskId);
 
     public record ReviewRequested(Guid CorrelationId);
     public record CompileRequested(Guid CorrelationId);

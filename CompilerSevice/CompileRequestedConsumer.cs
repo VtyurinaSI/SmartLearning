@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using MinIoStub;
 using SmartLearning.Contracts;
 using System.Text;
+using static System.Net.WebRequestMethods;
 
 namespace CompilerSevice
 {
@@ -25,7 +26,6 @@ namespace CompilerSevice
                 _log.LogError("Compiling code for {Cid} is empty", origCode);
                 return;
             }
-
             _log.LogDebug("Compiling code for {Cid}: \n{Code}", context.Message.CorrelationId, origCode);
             var parse = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
 

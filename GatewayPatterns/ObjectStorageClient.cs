@@ -15,7 +15,7 @@ namespace GatewayPatterns
                 $"/objects/load/file" +
                 $"?userId={userId}" +
                 $"&taskId={origCode.TaskId}"+
-                $"&name={"file1"}";
+                $"&name={"file1.txt"}";
 
             var resp = await _http.PostAsync(url,
                 new StringContent(origCode.OrigCode, System.Text.Encoding.UTF8, "text/plain"),

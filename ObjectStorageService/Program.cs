@@ -4,7 +4,7 @@ using Minio.ApiEndpoints;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using System.Text;
-
+Console.OutputEncoding = Encoding.UTF8;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
@@ -34,6 +34,7 @@ var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug)
 
 
 ILogger<Program> log = factory.CreateLogger<Program>();
+builder.Services.AddSingleton(log);
 
 var app = builder.Build();
 
@@ -53,6 +54,7 @@ app.MapPost("/objects/{stage}/file", async (
     StorageOptions o,
     CancellationToken ct) =>
 {
+
     if (!TryParseStage(stage, out var s))
         return Results.BadRequest("stage must be: load|build|reflect|llm");
 
@@ -83,49 +85,30 @@ app.MapGet("/objects/{stage}/file", async (
     [FromQuery] string name,
     IMinioClient minio,
     StorageOptions o,
+    ILogger<Program> log,
     CancellationToken ct) =>
 {
-    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: build|reflect|llm");
+    log.LogInformation("Enter in /objects/{stage}/file",stage);
+    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
     if (string.IsNullOrWhiteSpace(name)) return Results.BadRequest("name is required");
 
-    var key = StorageKeys.File(userId, taskId, s, name);
-    var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
-    return bytes is null
-        ? Results.NotFound()
-        : Results.File(bytes, "application/octet-stream", fileDownloadName: name);
+    var key =  StorageKeys.File(userId, taskId, s, name);
+    log.LogInformation("key/path: {k}", key);
+    try
+    {
+        var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
+        return bytes is null
+            ? Results.NotFound()
+            : Results.File(bytes, "application/octet-stream", fileDownloadName: name);
+    }
+    catch(Exception ex)
+    {
+        log.LogError(ex, "Error in reading file");
+        return Results.NotFound();
+    }
 })
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound)
-.WithOpenApi();
-
-app.MapGet("/objects/{stage}/list", async (
-    [FromRoute] string stage,
-    [FromQuery] Guid userId,
-    [FromQuery] long taskId,
-    IMinioClient minio,
-    StorageOptions o,
-    CancellationToken ct) =>
-{
-    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
-
-    var prefix = StorageKeys.StagePrefix(userId, taskId, s) + "/";
-    var list = await MinioIo.ListKeysAsync(minio, o.Bucket, prefix, recursive: true, ct);
-    return Results.Ok(list);
-})
-.Produces<string[]>(StatusCodes.Status200OK)
-.WithOpenApi();
-
-app.MapPost("/objects/text", async (
-    [FromQuery] string file,
-    [FromBody] string content,
-    IMinioClient minio,
-    StorageOptions o,
-    CancellationToken ct) =>
-{
-    var key = $"misc/{file}.txt";
-    await MinioIo.PutAsync(minio, o.Bucket, key, Encoding.UTF8.GetBytes(content), "text/plain", ct);
-    return Results.Ok(new { key, bucket = o.Bucket });
-})
 .WithOpenApi();
 
 app.Run();
@@ -166,7 +149,7 @@ static class StorageKeys
     };
 
     public static string Base(Guid userId, long taskId)
-        => $"submissions/{userId:N}/{taskId}";
+        => $"submissions/{userId}/{taskId}";
 
     public static string StagePrefix(Guid userId, long taskId, CheckStage stage)
         => $"{Base(userId, taskId)}/{StageSegment(stage)}";
