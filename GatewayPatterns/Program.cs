@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinIoStub;
 using Npgsql;
+using ObjectStorageService;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
@@ -17,7 +18,6 @@ using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -78,6 +78,7 @@ builder.Services.AddHttpClient<IObjectStorageClient, ObjectStorageClient>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://object-storage-service:8080/"
 });
 
+builder.Services.AddTransient<GatewayObjectStorageClient>();
 builder.Host.UseSerilog((ctx, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
     .Enrich.FromLogContext()
@@ -187,12 +188,12 @@ api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, Ca
 .WithSummary("Запрос прогресса пользователя");
 
 api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, HttpContext ctx, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct,
-    IObjectStorageClient minio) =>
+    IObjectStorageClient minio, GatewayObjectStorageClient minioHandler) =>
 {
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
     Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
-    await minio.SaveOrigCodeAsync(msg, userId, checkingId, ct);
+    await minioHandler.WriteFile(msg.OrigCode, checkingId, userId, msg.TaskId, "load", ct);
 
     using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
 

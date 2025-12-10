@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MinIoStub\MinIoStub.csproj" />
+    <ProjectReference Include="..\ObjectStorageService\ObjectStorageService.csproj" />
     <ProjectReference Include="..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
   </ItemGroup>
 </Project>

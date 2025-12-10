@@ -2,9 +2,7 @@
 {
     public interface IObjectStorageClient
     {
-        Task<Guid> SaveOrigCodeAsync(RecievedForChecking RequestData, Guid userId, Guid checkingId, CancellationToken ct);
-        Task SaveReviewAsync(Guid checkingId, string review, CancellationToken ct);
-        Task<string?> ReadOrigCodeAsync(Guid checkingId, CancellationToken ct);
-        Task<string?> ReadReviewAsync(Guid checkingId, CancellationToken ct);
+        Task WriteFile<T>(T data, Guid checkingId, Guid userId, long TaskId, string stage, CancellationToken token);
+        Task<T> ReadFile<T>(Guid checkingId, Guid userId, long TaskId, string stage, CancellationToken token);
     }
 }

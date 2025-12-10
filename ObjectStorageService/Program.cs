@@ -4,6 +4,8 @@ using Minio.ApiEndpoints;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using System.Text;
+using SmartLearning.Contracts;
+using ObjectStorageService;
 
 Console.OutputEncoding = Encoding.UTF8;
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +26,7 @@ if (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
 var mc = mcBuilder.Build();
 builder.Services.AddSingleton<IMinioClient>(mc);
 builder.Services.AddSingleton(opts);
+builder.Services.AddSingleton<IObjectStorageClient, ObjectStorageClient>();
 var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug)
     .AddSimpleConsole(opt =>
     {
@@ -33,7 +36,6 @@ var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug)
         opt.SingleLine = true;
     }));
 
-
 ILogger<Program> log = factory.CreateLogger<Program>();
 builder.Services.AddSingleton(log);
 
@@ -41,7 +43,6 @@ var app = builder.Build();
 
 await EnsureBucketAsync(mc, opts.Bucket);
 
-// swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapPost("/objects/{stage}/file", async (
@@ -109,8 +110,6 @@ app.MapGet("/objects/{stage}/file", async (
 
 app.Run();
 
-
-
 static bool TryParseStage(string stage, out CheckStage s)
 {
     switch (stage.ToLowerInvariant())
@@ -128,8 +127,6 @@ static async Task EnsureBucketAsync(IMinioClient mc, string bucket)
     var exists = await mc.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
     if (!exists) await mc.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket));
 }
-
-
 
 enum CheckStage { Load, Build, Reflect, Llm }
 
@@ -177,7 +174,8 @@ static class MinioIo
     {
         byte[]? result = null;
         await mc.GetObjectAsync(new GetObjectArgs()
-            .WithBucket(bucket).WithObject(key)
+            .WithBucket(bucket)
+            .WithObject(key)
             .WithCallbackStream(s =>
             {
                 using var ms = new MemoryStream();
