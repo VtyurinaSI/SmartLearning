@@ -18,6 +18,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddObjectStorage(builder.Configuration);
 
+builder.Services.AddHttpClient<CompileRequestedConsumer>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
+
 
 builder.Services.AddMassTransit(x =>
 {

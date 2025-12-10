@@ -26,7 +26,6 @@ if (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
 var mc = mcBuilder.Build();
 builder.Services.AddSingleton<IMinioClient>(mc);
 builder.Services.AddSingleton(opts);
-builder.Services.AddSingleton<IObjectStorageClient, ObjectStorageClient>();
 var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug)
     .AddSimpleConsole(opt =>
     {
@@ -50,19 +49,17 @@ app.MapPost("/objects/{stage}/file", async (
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
-    [FromQuery] string content,
     IMinioClient minio,
     StorageOptions o,
     CancellationToken ct) =>
 {
-
     if (!TryParseStage(stage, out var s))
         return Results.BadRequest("stage must be: load|build|reflect|llm");
 
     using var reader = new StreamReader(req.Body, Encoding.UTF8);
     var body = await reader.ReadToEndAsync(ct);
 
-    var text = !string.IsNullOrEmpty(content) ? content : (body ?? string.Empty);
+    var text = body ?? string.Empty;
 
     var contentType = string.IsNullOrWhiteSpace(req.ContentType)
         ? "text/plain"
@@ -74,8 +71,8 @@ app.MapPost("/objects/{stage}/file", async (
     await MinioIo.PutAsync(minio, o.Bucket, key, bytes, contentType, ct);
 
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });
-})
-.WithOpenApi();
+});
+
 
 app.MapGet("/objects/{stage}/file", async (
     [FromRoute] string stage,

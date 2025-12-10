@@ -8,12 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinIoStub;
 using Npgsql;
-using ObjectStorageService;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Data;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -61,24 +59,23 @@ builder.Services.AddHeaderPropagation(o =>
 });
 builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All);
 builder.Services.AddHttpClient<UsersApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"]))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"]!))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<ProgressApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]!))
     .AddHeaderPropagation();
 
 builder.Services.AddHttpClient<OrchApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]!))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<AuthApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]))
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]!))
     .AddHeaderPropagation();
-builder.Services.AddHttpClient<IObjectStorageClient, ObjectStorageClient>(c =>
+builder.Services.AddHttpClient<GatewayObjectStorageClient>(c =>
 {
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://object-storage-service:8080/"
 });
 
-builder.Services.AddTransient<GatewayObjectStorageClient>();
 builder.Host.UseSerilog((ctx, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
     .Enrich.FromLogContext()
@@ -187,8 +184,14 @@ api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, Ca
     .RequireAuthorization()
 .WithSummary("Запрос прогресса пользователя");
 
-api.MapPost("/orc/check", async ([FromBody] RecievedForChecking msg, HttpContext ctx, ProgressApi pr, IObjectStorageRepository repo, OrchApi orc, CancellationToken ct,
-    IObjectStorageClient minio, GatewayObjectStorageClient minioHandler) =>
+api.MapPost("/orc/check", async (
+    [FromBody] RecievedForChecking msg,
+    HttpContext ctx,
+    ProgressApi pr,
+    IObjectStorageRepository repo,
+    OrchApi orc,
+    GatewayObjectStorageClient minioHandler,
+    CancellationToken ct) =>
 {
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
