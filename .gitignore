@@ -38,3 +38,12 @@
 /StorageService/obj
 /ObjectStorageService/obj
 /ObjectStorageService/bin/Debug/net8.0
+/AuthService/bin/Release/net8.0
+/CompilerSevice/bin/Release/net8.0
+/LlmService/bin/Release/net8.0
+/MinIoStub/bin/Release/net8.0
+/ObjectStorageService/bin/Release/net8.0
+/Orchestrator/OrchestrPatterns.Application/bin/Release/net8.0
+/Orchestrator/OrchestrPatterns.Domain/bin/Release/net8.0
+/ProgressService/bin/Release/net8.0
+/SmartLearning.Contracts/bin/Release/net8.0
