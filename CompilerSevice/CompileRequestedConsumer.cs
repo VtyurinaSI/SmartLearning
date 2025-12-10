@@ -20,7 +20,6 @@ namespace CompilerSevice
             _repo = repo;
             _log = log;
             _http = http;
-            _log.LogInformation("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nСоздан {obj}, http-client: {cl}", nameof(CompileRequestedConsumer), _http.BaseAddress);
         }
         public async Task Consume(ConsumeContext<CompileRequested> context)
         {
