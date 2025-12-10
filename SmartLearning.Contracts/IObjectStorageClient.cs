@@ -1,6 +1,4 @@
-﻿using SmartLearning.Contracts;
-
-namespace GatewayPatterns
+﻿namespace SmartLearning.Contracts
 {
     public interface IObjectStorageClient
     {

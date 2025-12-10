@@ -4,6 +4,7 @@ using Minio.ApiEndpoints;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using System.Text;
+
 Console.OutputEncoding = Encoding.UTF8;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,13 +44,12 @@ await EnsureBucketAsync(mc, opts.Bucket);
 // swagger
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.MapPost("/objects/{stage}/file", async (
     HttpRequest req,
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
-    [FromQuery] string? name,
+    [FromQuery] string content,
     IMinioClient minio,
     StorageOptions o,
     CancellationToken ct) =>
@@ -61,17 +61,15 @@ app.MapPost("/objects/{stage}/file", async (
     using var reader = new StreamReader(req.Body, Encoding.UTF8);
     var body = await reader.ReadToEndAsync(ct);
 
-    var fileName = string.IsNullOrWhiteSpace(name)
-        ? $"{DateTime.UtcNow:yyyyMMdd_HHmmssfff}.txt"
-        : name;
+    var text = !string.IsNullOrEmpty(content) ? content : (body ?? string.Empty);
 
     var contentType = string.IsNullOrWhiteSpace(req.ContentType)
         ? "text/plain"
         : req.ContentType;
 
-    var bytes = Encoding.UTF8.GetBytes(body);
+    var bytes = Encoding.UTF8.GetBytes(text);
 
-    var key = StorageKeys.File(userId, taskId, s, fileName);
+    var key = StorageKeys.File(userId, taskId, s, "file.txt");
     await MinioIo.PutAsync(minio, o.Bucket, key, bytes, contentType, ct);
 
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });
@@ -82,7 +80,6 @@ app.MapGet("/objects/{stage}/file", async (
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
-    [FromQuery] string name,
     IMinioClient minio,
     StorageOptions o,
     ILogger<Program> log,
@@ -90,16 +87,15 @@ app.MapGet("/objects/{stage}/file", async (
 {
     log.LogInformation("Enter in /objects/{stage}/file",stage);
     if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
-    if (string.IsNullOrWhiteSpace(name)) return Results.BadRequest("name is required");
-
-    var key =  StorageKeys.File(userId, taskId, s, name);
+    
+    var key =  StorageKeys.File(userId, taskId, s, "file.txt");
     log.LogInformation("key/path: {k}", key);
     try
     {
         var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
         return bytes is null
             ? Results.NotFound()
-            : Results.File(bytes, "application/octet-stream", fileDownloadName: name);
+            : Results.File(bytes, "application/octet-stream", fileDownloadName: "file.txt");
     }
     catch(Exception ex)
     {
@@ -219,4 +215,5 @@ static class MinioIo
 
         return tcs.Task;
     }
+    
 }
