@@ -20,10 +20,13 @@ namespace CompilerSevice
         }
         public async Task Consume(ConsumeContext<CompileRequested> context)
         {
+            _log.LogInformation("Compile requested: CorrelationId={Cid}, UserId={UserId}, TaskId={TaskId}",
+                context.Message.CorrelationId, context.Message.UserId, context.Message.TaskId);
+
             var origCode = await _repo.ReadOrigCodeAsync(context.Message.CorrelationId, context.CancellationToken);
             if (origCode is null)
             {
-                _log.LogError("Compiling code for {Cid} is empty", origCode);
+                _log.LogError("Compiling code for {Cid} is empty", context.Message.CorrelationId);
                 return;
             }
             _log.LogDebug("Compiling code for {Cid}: \n{Code}", context.Message.CorrelationId, origCode);

@@ -12,7 +12,7 @@
     public record Cancel(Guid CorrelationId, Guid UserId, long TaskId);
 
     public record ReviewRequested(Guid CorrelationId);
-    public record CompileRequested(Guid CorrelationId);
+    public record CompileRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompilationFinished(Guid CorrelationId);
     public record CompilationFailed(Guid CorrelationId);
     public record CompileTimeout(Guid CorrelationId);

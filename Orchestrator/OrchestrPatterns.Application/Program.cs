@@ -81,8 +81,10 @@ orc.MapPost("/check", async (IBus bus,
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
+    await bus.Publish(new StartCompile(id, dto.UserId, dto.TaskId), ct);
 
-    await bus.Publish(new CompileRequested(id), ct);
+    await bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
+
     var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     await Task.Delay(200, ct);
     var compilRes = await repo.ReadCompilationAsync(id, ct);

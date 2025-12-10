@@ -63,7 +63,13 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         Initially(
             When(StartCompileEvent)
-                .Then(SetCreated)
+                .Then(ctx =>
+                {
+                    // заполняем данные саги из сообщения StartCompile
+                    ctx.Saga.UserId = ctx.Message.UserId;
+                    ctx.Saga.TaskId = ctx.Message.TaskId;
+                    ctx.Saga.Status = CheckingStatus.Created;
+                })
                 .TransitionTo(Compiling).Then(SetCompiling),
 
             When(StartTestsEvent)
@@ -79,6 +85,11 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         During(Created,
             When(StartCompileEvent)
+                .Then(ctx =>
+                {
+                    ctx.Saga.UserId = ctx.Message.UserId;
+                    ctx.Saga.TaskId = ctx.Message.TaskId;
+                })
                 .TransitionTo(Compiling).Then(SetCompiling),
 
             When(StartTestsEvent)
