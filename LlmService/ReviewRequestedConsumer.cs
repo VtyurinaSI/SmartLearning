@@ -32,7 +32,7 @@ namespace LlmService
             try
             {
                 var minioClient = _http.CreateClient("MinioStorage");
-                var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}";
+                var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={"file.txt"}";
 
                 using var respMinio = await minioClient.GetAsync(url, context.CancellationToken);
                 if (respMinio.StatusCode == HttpStatusCode.NotFound)

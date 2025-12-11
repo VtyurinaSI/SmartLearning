@@ -81,6 +81,7 @@ app.MapGet("/objects/{stage}/file", async (
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
+    [FromQuery] string fileName,
     IMinioClient minio,
     StorageOptions o,
     ILogger<Program> log,
@@ -88,15 +89,15 @@ app.MapGet("/objects/{stage}/file", async (
 {
     log.LogInformation("Enter in /objects/{stage}/file",stage);
     if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
-    
-    var key =  StorageKeys.File(userId, taskId, s, "file.txt");
+    if (string.IsNullOrEmpty(fileName)) return Results.BadRequest($"Некорректное имя файла: {fileName}");
+    var key =  StorageKeys.File(userId, taskId, s, fileName);
     log.LogInformation("key/path: {k}", key);
     try
     {
         var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
         return bytes is null
             ? Results.NotFound()
-            : Results.File(bytes, "application/octet-stream", fileDownloadName: "file.txt");
+            : Results.File(bytes, "application/octet-stream", fileDownloadName: fileName);
     }
     catch(Exception ex)
     {

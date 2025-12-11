@@ -8,6 +8,7 @@ using OrchestrPatterns.Application.Consumers;
 using OrchestrPatterns.Domain;
 using SmartLearning.Contracts;
 using System.Data;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder();
 builder.Configuration
@@ -15,6 +16,9 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 var cs = builder.Configuration.GetConnectionString("ConnectionStrings")
          ?? builder.Configuration.GetConnectionString("ObjectStorage");
+
+builder.Services.AddHttpClient("MinioStorage", c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
@@ -77,6 +81,7 @@ orc.MapPost("/check", async (IBus bus,
                           CompletionHub hub,
                           IObjectStorageRepository repo,
                           StartChecking dto,
+                          IHttpClientFactory _http,
                           CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
@@ -103,7 +108,15 @@ orc.MapPost("/check", async (IBus bus,
 
     await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
     await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
-    var reviewRes = await repo.ReadReviewAsync(id, ct);
+    var minioClient = _http.CreateClient("MinioStorage");
+    var url = $"/objects/llm/file?userId={dto.UserId}&taskId={dto.TaskId}&fileName={"review.txt"}";
+
+    using var respMinio = await minioClient.GetAsync(url);
+
+    respMinio.EnsureSuccessStatusCode();
+
+    var bytes = await respMinio.Content.ReadAsByteArrayAsync();
+    var reviewRes = Encoding.UTF8.GetString(bytes);
     await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true), ct);
     return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, reviewRes));
 });
