@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 
 namespace GatewayPatterns
@@ -8,20 +9,28 @@ namespace GatewayPatterns
         private readonly HttpClient _http;
         public GatewayObjectStorageClient(HttpClient http) => _http = http;
 
-        public async Task WriteFile(string data, Guid checkingId, Guid userId, long TaskId, string stage, CancellationToken token)
+        public async Task WriteFile(string data, Guid checkingId, Guid userId, long taskId, string stage, CancellationToken token)
         {
-            var url = $"/objects/{stage}/file?userId={userId}&taskId={TaskId}&fileName={"file.txt"}";
-            using var content = new StringContent(data ?? string.Empty, Encoding.UTF8, "text/plain");
+            var bytes = Encoding.UTF8.GetBytes(data ?? string.Empty);
+            using var ms = new MemoryStream(bytes);
+
+            await WriteFileInternal(ms, $"{DateTime.Now}.txt", userId, taskId, stage, token);
+        }
+
+        public async Task WriteFile(Stream data, string fileName, Guid userId, long taskId, string stage, CancellationToken token)
+        {
+            await WriteFileInternal(data, fileName, userId, taskId, stage, token);
+        }
+
+        private async Task WriteFileInternal(Stream data, string fileName, Guid userId, long taskId, string stage, CancellationToken token)
+        {
+            var url = $"/objects/{stage}/file?userId={userId}&taskId={taskId}&fileName={fileName}";
+
+            using var content = new StreamContent(data);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
             using var resp = await _http.PostAsync(url, content, token);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                var respBody = await resp.Content.ReadAsStringAsync(token);
-                throw new HttpRequestException(
-                    $"ObjectStorage returned {(int)resp.StatusCode} {resp.ReasonPhrase}. " +
-                    $"Url: {url}. Body: {respBody}");
-            }
+            resp.EnsureSuccessStatusCode();
         }
 
         public async Task<T> ReadFile<T>(Guid checkingId, Guid userId, long TaskId, string stage, CancellationToken token)

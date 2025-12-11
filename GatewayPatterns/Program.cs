@@ -151,28 +151,20 @@ app.Use(async (ctx, next) =>
     await next();
 });
 var api = app.MapGroup("/api");
-api.MapPost("/file", ([FromForm] IFormFile file) =>
+api.MapPost("/file", (IFormFile file) =>
 {
 
     return Results.Ok($"Получили {file.FileName}!");
 })
-    .DisableAntiforgery()
-   .Accepts<IFormFile>("multipart/form-data")
+   .DisableAntiforgery()
+   //.Accepts<IFormFile>("multipart/form-data")
    .Produces(StatusCodes.Status200OK)
    .WithOpenApi();
 
 api.MapGet("/ping", () =>
 {
     return "pong";
-})
-.WithSummary("Отправка команды в UserService // заглушка");
-
-api.MapGet("/users/{msg}", async ([FromRoute] string msg, UsersApi users, CancellationToken ct) =>
-{
-    using var resp = await users.PingAsync(msg, ct);
-    return await Proxy(resp, ct);
-})
-.WithSummary("Отправка команды в UserService // заглушка");
+});
 
 api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, CancellationToken ct) =>
 {
@@ -182,10 +174,11 @@ api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, Ca
     return await Proxy(resp, ct);
 })
     .RequireAuthorization()
-.WithSummary("Запрос прогресса пользователя");
+.WithSummary("Requesting user progress");
 
 api.MapPost("/orc/check", async (
-    [FromBody] RecievedForChecking msg,
+    [FromQuery] long taskId,
+    IFormFile file,
     HttpContext ctx,
     ProgressApi pr,
     IObjectStorageRepository repo,
@@ -195,16 +188,18 @@ api.MapPost("/orc/check", async (
 {
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
-    Guid checkingId = await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
-    await minioHandler.WriteFile(msg.OrigCode, checkingId, userId, msg.TaskId, "load", ct);
+    Guid checkingId = new();//await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
+    await using var stream = file.OpenReadStream();
+    await minioHandler.WriteFile(stream, file.FileName, userId, taskId, "load", ct);
 
-    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, msg.TaskId), ct);
+    using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, taskId), ct);
 
     var ans = await Proxy(resp, ct);
     return ans;
 })
+    .DisableAntiforgery()
     .RequireAuthorization()
-.WithSummary("Проверка кода");
+    .WithSummary("Code checking");
 
 api.MapPost("/auth/register", async ([FromBody] RegisterRequest req, AuthApi auth, CancellationToken ct) =>
 {
@@ -212,7 +207,7 @@ api.MapPost("/auth/register", async ([FromBody] RegisterRequest req, AuthApi aut
     return await Proxy(resp, ct);
 })
     .AllowAnonymous()
-.WithSummary("Регистрация нового пользователя");
+.WithSummary("Registering a new user");
 
 api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, CancellationToken ct) =>
 {
@@ -220,7 +215,7 @@ api.MapPost("/auth/login", async ([FromBody] LoginRequest req, AuthApi auth, Can
     return await Proxy(resp, ct);
 })
     .AllowAnonymous()
-    .WithSummary("Авторизация");
+    .WithSummary("Authorization");
 
 app.MapHealthChecks("/health/ready");
 var webRoot = app.Environment.WebRootPath

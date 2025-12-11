@@ -4,8 +4,6 @@ using Minio.ApiEndpoints;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using System.Text;
-using SmartLearning.Contracts;
-using ObjectStorageService;
 
 Console.OutputEncoding = Encoding.UTF8;
 var builder = WebApplication.CreateBuilder(args);
@@ -56,23 +54,20 @@ app.MapPost("/objects/{stage}/file", async (
 {
     if (!TryParseStage(stage, out var s))
         return Results.BadRequest("stage must be: load|build|reflect|llm");
-
-    if (string.IsNullOrEmpty(fileName)) 
-        return Results.BadRequest($"Некорректное имя файла (fileName)");
-    using var reader = new StreamReader(req.Body, Encoding.UTF8);
-    var body = await reader.ReadToEndAsync(ct);
-
-    var text = body ?? string.Empty;
-
     var contentType = string.IsNullOrWhiteSpace(req.ContentType)
-        ? "text/plain"
-        : req.ContentType;
+        ? "application/octet-stream"
+        : req.ContentType!;
 
-    var bytes = Encoding.UTF8.GetBytes(text);
+    await using var ms = new MemoryStream();
+    await req.Body.CopyToAsync(ms, ct);
+    var bytes = ms.ToArray();
+
+    if (bytes.Length == 0)
+        return Results.BadRequest("Тело запроса пустое – нечего сохранять");
 
     var key = StorageKeys.File(userId, taskId, s, fileName);
     await MinioIo.PutAsync(minio, o.Bucket, key, bytes, contentType, ct);
-
+    
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });
 });
 
@@ -174,6 +169,7 @@ static class MinioIo
     public static async Task<byte[]?> GetAsync(IMinioClient mc, string bucket, string key, CancellationToken ct)
     {
         byte[]? result = null;
+        
         await mc.GetObjectAsync(new GetObjectArgs()
             .WithBucket(bucket)
             .WithObject(key)
