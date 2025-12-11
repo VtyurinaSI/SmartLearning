@@ -49,6 +49,7 @@ app.MapPost("/objects/{stage}/file", async (
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
+    [FromQuery] string fileName,
     IMinioClient minio,
     StorageOptions o,
     CancellationToken ct) =>
@@ -56,6 +57,8 @@ app.MapPost("/objects/{stage}/file", async (
     if (!TryParseStage(stage, out var s))
         return Results.BadRequest("stage must be: load|build|reflect|llm");
 
+    if (string.IsNullOrEmpty(fileName)) 
+        return Results.BadRequest($"Некорректное имя файла (fileName)");
     using var reader = new StreamReader(req.Body, Encoding.UTF8);
     var body = await reader.ReadToEndAsync(ct);
 
@@ -67,7 +70,7 @@ app.MapPost("/objects/{stage}/file", async (
 
     var bytes = Encoding.UTF8.GetBytes(text);
 
-    var key = StorageKeys.File(userId, taskId, s, "file.txt");
+    var key = StorageKeys.File(userId, taskId, s, fileName);
     await MinioIo.PutAsync(minio, o.Bucket, key, bytes, contentType, ct);
 
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });

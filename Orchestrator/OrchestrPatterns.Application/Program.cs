@@ -101,7 +101,7 @@ orc.MapPost("/check", async (IBus bus,
         return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
     }
 
-    await bus.Publish(new ReviewRequested(id), ct);
+    await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
     await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     var reviewRes = await repo.ReadReviewAsync(id, ct);
     await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true), ct);

@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using MinIoStub;
 using SmartLearning.Contracts;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -23,12 +24,27 @@ namespace LlmService
         public record ChatRequest(string model, ChatMessage[] messages);
         public record Choice(int index, ChatMessage message);
         public record ChatResponse(Choice[] choices);
-
-        public async Task Consume(ConsumeContext<ReviewRequested> ctx)
+        
+        public async Task Consume(ConsumeContext<ReviewRequested> context)
         {
             try
             {
-                var origCode = await _repo.ReadOrigCodeAsync(ctx.Message.CorrelationId, ctx.CancellationToken);
+                var minioClient = _http.CreateClient("MinioStorage");
+                var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}";
+
+                using var respMinio = await minioClient.GetAsync(url, context.CancellationToken);
+                if (respMinio.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _log.LogError("ObjectStorage returned 404 for {Cid}", context.Message.CorrelationId);
+                    return;
+                }
+
+                respMinio.EnsureSuccessStatusCode();
+
+                var bytes = await respMinio.Content.ReadAsByteArrayAsync(context.CancellationToken);
+                var origCode = Encoding.UTF8.GetString(bytes);
+
+
 
                 var userPrompt = """
                     Привет! Ты эксперт в области разработки на C#.
@@ -45,33 +61,36 @@ namespace LlmService
                 var reqJson = JsonSerializer.Serialize(request);
                 using var content = new StringContent(reqJson, Encoding.UTF8, "application/json");
 
-                var client = _http.CreateClient("Ollama");
-                using var resp = await client.PostAsync("v1/chat/completions", content, ctx.CancellationToken);
+                var ollamaClient = _http.CreateClient("Ollama");
+                using var resp = await ollamaClient.PostAsync("v1/chat/completions", content, context.CancellationToken);
 
-                var respBody = await resp.Content.ReadAsStringAsync(ctx.CancellationToken);
+                var respBody = await resp.Content.ReadAsStringAsync(context.CancellationToken);
                 if (!resp.IsSuccessStatusCode)
                 {
                     _log.LogError("Ollama chat failed ({Status}) for {Cid}: {Body}",
-                        (int)resp.StatusCode, ctx.Message.CorrelationId, respBody);
+                        (int)resp.StatusCode, context.Message.CorrelationId, respBody);
 
-                    await ctx.Publish(new ReviewFailed(ctx.Message.CorrelationId));
+                    await context.Publish(new ReviewFailed(context.Message.CorrelationId,
+                        context.Message.UserId, context.Message.TaskId));
                     return;
                 }
                 ChatResponse? chat = null;
                 try { chat = JsonSerializer.Deserialize<ChatResponse>(respBody); }
-                catch (Exception ex) { _log.LogError(ex, "Failed to parse Ollama response for {Cid}", ctx.Message.CorrelationId); }
+                catch (Exception ex) { _log.LogError(ex, "Failed to parse Ollama response for {Cid}", context.Message.CorrelationId); }
 
                 var answer = chat?.choices?.FirstOrDefault()?.message?.content ?? string.Empty;
 
-                _log.LogInformation("Ollama review (cid {Cid}): {Text}", ctx.Message.CorrelationId, answer);
+                _log.LogInformation("Ollama review (cid {Cid}): {Text}", context.Message.CorrelationId, answer);
 
-                await _repo.SaveReviewAsync(ctx.Message.CorrelationId, answer, ctx.CancellationToken);
-                await ctx.Publish(new ReviewFinished(ctx.Message.CorrelationId));
+                await _repo.SaveReviewAsync(context.Message.CorrelationId, answer, context.CancellationToken);
+                await context.Publish(new ReviewFinished(context.Message.CorrelationId,
+                        context.Message.UserId, context.Message.TaskId));
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Review failed for {Cid}", ctx.Message.CorrelationId);
-                await ctx.Publish(new ReviewFailed(ctx.Message.CorrelationId));
+                _log.LogError(ex, "Review failed for {Cid}", context.Message.CorrelationId);
+                await context.Publish(new ReviewFailed(context.Message.CorrelationId,
+                        context.Message.UserId, context.Message.TaskId));
             }
         }
     }

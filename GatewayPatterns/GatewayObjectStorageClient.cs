@@ -10,7 +10,7 @@ namespace GatewayPatterns
 
         public async Task WriteFile(string data, Guid checkingId, Guid userId, long TaskId, string stage, CancellationToken token)
         {
-            var url = $"/objects/{stage}/file?userId={userId}&taskId={TaskId}";
+            var url = $"/objects/{stage}/file?userId={userId}&taskId={TaskId}&fileName={"file.txt"}";
             using var content = new StringContent(data ?? string.Empty, Encoding.UTF8, "text/plain");
 
             using var resp = await _http.PostAsync(url, content, token);

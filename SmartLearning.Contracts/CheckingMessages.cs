@@ -11,18 +11,18 @@
     public record StartReview(Guid CorrelationId, Guid UserId, long TaskId);
     public record Cancel(Guid CorrelationId, Guid UserId, long TaskId);
 
-    public record ReviewRequested(Guid CorrelationId);
+    public record ReviewRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompileRequested(Guid CorrelationId, Guid UserId, long TaskId);
-    public record CompilationFinished(Guid CorrelationId);
-    public record CompilationFailed(Guid CorrelationId);
-    public record CompileTimeout(Guid CorrelationId);
-    public record TestsFinished(Guid CorrelationId);
-    public record TestsFailed(Guid CorrelationId);
-    public record TestsTimeout(Guid CorrelationId);
+    public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId);
+    public record CompilationFailed(Guid CorrelationId, Guid UserId, long TaskId);
+    public record CompileTimeout(Guid CorrelationId, Guid UserId, long TaskId);
+    public record TestsFinished(Guid CorrelationId, Guid UserId, long TaskId);
+    public record TestsFailed(Guid CorrelationId, Guid UserId, long TaskId);
+    public record TestsTimeout(Guid CorrelationId, Guid UserId, long TaskId);
 
-    public record ReviewFinished(Guid CorrelationId);
-    public record ReviewFailed(Guid CorrelationId);
-    public record ReviewTimeout(Guid CorrelationId);
+    public record ReviewFinished(Guid CorrelationId, Guid UserId, long TaskId);
+    public record ReviewFailed(Guid CorrelationId, Guid UserId, long TaskId);
+    public record ReviewTimeout(Guid CorrelationId, Guid UserId, long TaskId);
 
-    public record Finalize(Guid CorrelationId);
+    public record Finalize(Guid CorrelationId, Guid UserId, long TaskId);
 }

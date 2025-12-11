@@ -26,7 +26,8 @@ builder.Services.AddHttpClient("Ollama", client =>
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 });
-
+builder.Services.AddHttpClient("MinioStorage",c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
 builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddMassTransit(x =>
 {

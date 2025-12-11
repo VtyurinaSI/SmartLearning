@@ -148,8 +148,8 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
         );
 
         WhenEnter(Reviewing, x => x
-    .ThenAsync(ctx => ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId)))
-    .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId))
+    .ThenAsync(ctx => ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId)))
+    .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId))
 );
 
         During(Reviewing,
