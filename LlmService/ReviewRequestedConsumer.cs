@@ -4,6 +4,8 @@ using SmartLearning.Contracts;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LlmService
 {
@@ -81,6 +83,19 @@ namespace LlmService
                 var answer = chat?.choices?.FirstOrDefault()?.message?.content ?? string.Empty;
 
                 _log.LogInformation("Ollama review (cid {Cid}): {Text}", context.Message.CorrelationId, answer);
+
+                var urlRes = $"/objects/{"llm"}/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={"review.txt"}";
+                using var cont = new StringContent(answer ?? string.Empty, Encoding.UTF8, "text/plain");
+
+                using var respPostMinio = await minioClient.PostAsync(urlRes, cont, default);
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var respBody_ = await respPostMinio.Content.ReadAsStringAsync(default);
+                    throw new HttpRequestException(
+                        $"ObjectStorage returned {(int)respPostMinio.StatusCode} {respPostMinio.ReasonPhrase}. " +
+                        $"Url: {urlRes}. Body: {respBody_}");
+                }
 
                 await _repo.SaveReviewAsync(context.Message.CorrelationId, answer, context.CancellationToken);
                 await context.Publish(new ReviewFinished(context.Message.CorrelationId,
