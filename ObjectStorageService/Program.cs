@@ -76,33 +76,82 @@ app.MapGet("/objects/{stage}/file", async (
     [FromRoute] string stage,
     [FromQuery] Guid userId,
     [FromQuery] long taskId,
-    [FromQuery] string fileName,
+    [FromQuery] string? fileName,
     IMinioClient minio,
     StorageOptions o,
     ILogger<Program> log,
     CancellationToken ct) =>
 {
-    log.LogInformation("Enter in /objects/{stage}/file",stage);
-    if (!TryParseStage(stage, out var s)) return Results.BadRequest("stage must be: load|build|reflect|llm");
-    if (string.IsNullOrEmpty(fileName)) return Results.BadRequest($"Некорректное имя файла: {fileName}");
-    var key =  StorageKeys.File(userId, taskId, s, fileName);
-    log.LogInformation("key/path: {k}", key);
-    try
+    log.LogInformation("Enter in /objects/{stage}/file", stage);
+
+    if (!TryParseStage(stage, out var s))
+        return Results.BadRequest("stage must be: load|build|reflect|llm");
+
+    if (!string.IsNullOrWhiteSpace(fileName))
     {
+        var key = StorageKeys.File(userId, taskId, s, fileName);
+
+        try
+        {
+            var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
+            return bytes is null
+                ? Results.NotFound()
+                : Results.File(bytes, "application/octet-stream", fileName);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error reading file");
+            return Results.NotFound();
+        }
+    }
+
+    var prefix = StorageKeys.StagePrefix(userId, taskId, s) + "/";
+    var keys = await MinioIo.ListKeysAsync(minio, o.Bucket, prefix, recursive: true, ct);
+
+    if (keys.Count == 0)
+        return Results.NotFound("Файлов нет");
+
+    if (keys.Count == 1)
+    {
+        var key = keys[0];
         var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
-        return bytes is null
-            ? Results.NotFound()
-            : Results.File(bytes, "application/octet-stream", fileDownloadName: fileName);
+
+        if (bytes is null)
+            return Results.NotFound();
+
+        var name = Path.GetFileName(key);
+        return Results.File(bytes, "application/octet-stream", name);
     }
-    catch(Exception ex)
+
+    using var zipMs = new MemoryStream();
+    using (var zip = new System.IO.Compression.ZipArchive(
+        zipMs,
+        System.IO.Compression.ZipArchiveMode.Create,
+        leaveOpen: true))
     {
-        log.LogError(ex, "Error in reading file");
-        return Results.NotFound();
+        foreach (var key in keys)
+        {
+            var bytes = await MinioIo.GetAsync(minio, o.Bucket, key, ct);
+            if (bytes is null) continue;
+
+            var entryName = key.Substring(prefix.Length);
+            var entry = zip.CreateEntry(entryName, System.IO.Compression.CompressionLevel.Fastest);
+
+            await using var entryStream = entry.Open();
+            await entryStream.WriteAsync(bytes, ct);
+        }
     }
+
+    zipMs.Position = 0;
+    return Results.File(
+        zipMs.ToArray(),
+        "application/zip",
+        $"{stage}-{taskId}.zip");
 })
 .Produces(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound)
 .WithOpenApi();
+
 
 app.Run();
 
