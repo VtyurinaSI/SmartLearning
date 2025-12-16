@@ -65,7 +65,6 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
             When(StartCompileEvent)
                 .Then(ctx =>
                 {
-                    // заполняем данные саги из сообщения StartCompile
                     ctx.Saga.UserId = ctx.Message.UserId;
                     ctx.Saga.TaskId = ctx.Message.TaskId;
                     ctx.Saga.Status = CheckingStatus.Created;
@@ -145,6 +144,10 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
             When(CancelEvent)
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
+        );
+
+        WhenEnter(Testing, x => x
+            .ThenAsync(ctx => ctx.Publish(new TestRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId)))
         );
 
         WhenEnter(Reviewing, x => x

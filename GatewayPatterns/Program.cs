@@ -37,7 +37,6 @@ builder.Services.AddSwaggerGen(c =>
             Name = "Authorization",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,
-            Description = "¬ставь сюда “ќЋ№ ќ JWT (без 'Bearer ' Ч Swagger добавит сам).",
             Reference = new OpenApiReference
             {
                 Id = JwtBearerDefaults.AuthenticationScheme,

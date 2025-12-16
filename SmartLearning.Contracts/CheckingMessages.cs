@@ -13,6 +13,7 @@
 
     public record ReviewRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompileRequested(Guid CorrelationId, Guid UserId, long TaskId);
+    public record TestRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompilationFailed(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompileTimeout(Guid CorrelationId, Guid UserId, long TaskId);

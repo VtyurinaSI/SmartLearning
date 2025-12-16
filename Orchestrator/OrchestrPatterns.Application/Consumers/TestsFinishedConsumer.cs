@@ -3,13 +3,13 @@ using SmartLearning.Contracts;
 
 namespace OrchestrPatterns.Application.Consumers
 {
-    public sealed class ReviewFinishedConsumer : IConsumer<ReviewFinished>
+    public class TestsFinishedConsumer : IConsumer<TestsFinished>
     {
         private readonly CompletionHub _hub;
-        public ReviewFinishedConsumer(CompletionHub hub) => _hub = hub;
+        public TestsFinishedConsumer(CompletionHub hub) => _hub = hub;
 
-        public Task Consume(ConsumeContext<ReviewFinished> ctx)
-        { 
+        public Task Consume(ConsumeContext<TestsFinished> ctx)
+        {
             _hub.SetCompleted(ctx.Message.CorrelationId, true);
             return Task.CompletedTask;
         }

@@ -6,11 +6,22 @@ using Npgsql;
 using OrchestrPatterns.Application;
 using OrchestrPatterns.Application.Consumers;
 using OrchestrPatterns.Domain;
+using Serilog;
+using Serilog.Events;
 using SmartLearning.Contracts;
 using System.Data;
 using System.Text;
-
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 var builder = WebApplication.CreateBuilder();
+builder.Host.UseSerilog((ctx, lc) =>
+{
+    lc.ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+
+    lc.MinimumLevel.Is(LogEventLevel.Debug);
+});
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
@@ -37,6 +48,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ReviewFailedConsumer>();
     x.AddConsumer<CompileFinishedConsumers>();
     x.AddConsumer<CompileFailedConsumer>();
+    x.AddConsumer<TestsFinishedConsumer>();
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()
@@ -82,11 +94,12 @@ orc.MapPost("/check", async (IBus bus,
                           IObjectStorageRepository repo,
                           StartChecking dto,
                           IHttpClientFactory _http,
+                          ILogger<Program> log,
                           CancellationToken ct) =>
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
-    await bus.Publish(new StartCompile(id, dto.UserId, dto.TaskId), ct);
+    //await bus.Publish(new StartCompile(id, dto.UserId, dto.TaskId), ct);
 
     await bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
 
@@ -99,12 +112,13 @@ orc.MapPost("/check", async (IBus bus,
         await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, false, false, false), ct);
         return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
     }
-    Random rnd = new();
-    if (rnd.Next(0, 2) == 0)
-    {
-        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, false, false), ct);
+    
+    await bus.Publish(new TestRequested(id, dto.UserId, dto.TaskId), ct);
+    
+    var okReflection = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    
+    if (!okReflection)    
         return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
-    }
 
     await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
     await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
@@ -118,7 +132,7 @@ orc.MapPost("/check", async (IBus bus,
     var bytes = await respMinio.Content.ReadAsByteArrayAsync();
     var reviewRes = Encoding.UTF8.GetString(bytes);
     await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true), ct);
-    return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, reviewRes));
+    return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, "ok", reviewRes));
 });
 
 app.Run();

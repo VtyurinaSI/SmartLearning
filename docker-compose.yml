@@ -30,6 +30,8 @@ services:
       - "11434:11434"
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - LANG=ru_RU.UTF-8
+      - LC_ALL=ru_RU.UTF-8
     volumes:
       - ollama:/root/.ollama
     command: ["serve"]   
@@ -110,6 +112,22 @@ services:
       rabbitmq:  { condition: service_healthy }
     ports: ["6002:8080"]  
 
+  reflection:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PROJECT_PATH: ReflectionService/ReflectionService.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: ReflectionService.dll
+    depends_on:
+      object-storage-service: {condition: service_started}
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    ports: ["6004:8080"]
+
+
   llm:
     build:
       context: .
@@ -185,7 +203,7 @@ services:
     volumes:
       - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
     entrypoint: ["/bin/sh","-c","tr -d '\\r' < /init/30-init-minio.sh > /tmp/init.sh && chmod +x /tmp/init.sh && /tmp/init.sh"]
-
+    
   object-storage-service:
     build:
       context: .

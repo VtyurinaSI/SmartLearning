@@ -1,0 +1,6 @@
+@ReflectionService_HostAddress = http://localhost:5236
+
+GET {{ReflectionService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
