@@ -95,7 +95,7 @@ namespace CompilerSevice
 
         private async Task<string> LoadSourceAsync(ConsumeContext<CompileRequested> context)
         {
-            var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={"file.txt"}";
+            var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={null}";
 
             using var resp = await _http.GetAsync(url, context.CancellationToken);
             if (resp.StatusCode == HttpStatusCode.NotFound)
