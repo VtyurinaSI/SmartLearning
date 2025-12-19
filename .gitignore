@@ -52,3 +52,7 @@
 /ReflectionService.Domain/obj
 /ReflectionService.Application/bin/Debug/net8.0
 /ReflectionService.Application/obj
+/ReflectionService/ReflectionService.Application/bin/Debug/net8.0
+/ReflectionService/ReflectionService.Application/obj/Debug/net8.0
+/ReflectionService/ReflectionService.Application/obj
+/ReflectionService/ReflectionService.Domain/obj
