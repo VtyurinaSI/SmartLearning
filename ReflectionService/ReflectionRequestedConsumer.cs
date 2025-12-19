@@ -1,6 +1,8 @@
 ﻿using MassTransit;
 using SmartLearning.Contracts;
 using System.Net;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 
 namespace ReflectionService
@@ -34,11 +36,26 @@ namespace ReflectionService
             _log.LogInformation("Сборка успешно прочитан!");
             return await resp.Content.ReadAsByteArrayAsync(context.CancellationToken);
         }
+
         public async Task Consume(ConsumeContext<TestRequested> context)
         {
             _log.LogInformation("Reflection requested: CorrelationId={Cid}, UserId={UserId}, TaskId={TaskId}",
                 context.Message.CorrelationId, context.Message.UserId, context.Message.TaskId);
-            var origCode = await LoadSourceAsync(context);
+            var dllBytes = await LoadSourceAsync(context);
+
+            if (dllBytes.Length == 0)
+                throw new InvalidOperationException("DLL is empty");
+
+            var alc = new AssemblyLoadContext($"User_{context.Message.UserId}_Task{context.Message.TaskId}_Submission", isCollectible: true);
+
+            using var ms = new MemoryStream(dllBytes);
+            var assembly = alc.LoadFromStream(ms);
+
+
+
+
+
+
 
             await context.Publish(new TestsFinished(context.Message.CorrelationId,
                         context.Message.UserId, context.Message.TaskId));

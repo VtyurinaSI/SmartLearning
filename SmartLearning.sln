@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectStorageService", "Obj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService", "ReflectionService\ReflectionService.csproj", "{78908995-8CBC-4186-9B8B-D692A29F8AEA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService.Domain", "ReflectionService.Domain\ReflectionService.Domain.csproj", "{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{78908995-8CBC-4186-9B8B-D692A29F8AEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78908995-8CBC-4186-9B8B-D692A29F8AEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78908995-8CBC-4186-9B8B-D692A29F8AEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
