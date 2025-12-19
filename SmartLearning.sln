@@ -39,7 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectStorageService", "ObjectStorageService\ObjectStorageService.csproj", "{99D45FCE-2461-4D8E-BAF7-54B291966DC2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService", "ReflectionService\ReflectionService.csproj", "{78908995-8CBC-4186-9B8B-D692A29F8AEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService.Application", "ReflectionService\ReflectionService.Application.csproj", "{78908995-8CBC-4186-9B8B-D692A29F8AEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService.Domain", "ReflectionService.Domain\ReflectionService.Domain.csproj", "{E641F1AD-6CCA-4672-BCF0-A79CC34DFCF8}"
 EndProject
