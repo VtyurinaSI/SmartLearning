@@ -117,10 +117,10 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        PROJECT_PATH: ReflectionService/ReflectionService.csproj
+        PROJECT_PATH: ReflectionService/ReflectionService.Application/ReflectionService.Application.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      APP_DLL: ReflectionService.dll
+      APP_DLL: ReflectionService.Application.dll
     depends_on:
       object-storage-service: {condition: service_started}
       postgres:  { condition: service_healthy }
