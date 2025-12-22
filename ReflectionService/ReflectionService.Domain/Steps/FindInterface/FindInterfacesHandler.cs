@@ -21,15 +21,25 @@ public sealed class FindInterfacesHandler : HandlerTemplateBase<FindInterfacesAr
             .OrderBy(t => t.FullName)
             .ToArray();
 
-        var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
-        if (!string.IsNullOrWhiteSpace(output))
-            context.Roles[output] = new RoleValue(RoleValueKind.Types, types);
-
-        context.StepResults.Add(new StepResult(step.Id, step.Operation, true));
         return new TypesResult(types);
     }
 
-    internal protected override void WriteResult(CheckingContext context, TypesResult results) { }
+    internal protected override void WriteResult(CheckingContext context, ManifestStep step, TypesResult results)
+    {
+        var res = results.Types;
+        if (res == null || res.Length == 0)
+        {
+            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Интерфейсы не найдены"));
+            return;
+        }
+
+        var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
+        if (!string.IsNullOrWhiteSpace(output))
+            context.Roles[output!] = new RoleValue(RoleValueKind.Types, res);
+
+        context.CachedTypes.AddRange(res);
+        context.StepResults.Add(new(step.Id, step.Operation, true));
+    }
 
     private static IEnumerable<Type> GetAllTypesSafe(Assembly asm)
     {

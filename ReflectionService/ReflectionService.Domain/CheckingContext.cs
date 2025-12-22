@@ -17,9 +17,9 @@ namespace ReflectionService.Domain
 
         public Dictionary<string, RoleValue> Roles { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-        public List<StepResult> StepResults { get; } = [];
+        public List<StepResult> StepResults { get; } = new();
 
-        public List<string> Diagnostics { get; } = [];
-        public List<Type> CachedTypes { get; } = [];
+        public List<string> Diagnostics { get; } = new();
+        public List<Type> CachedTypes { get; } = new();
     }
 }

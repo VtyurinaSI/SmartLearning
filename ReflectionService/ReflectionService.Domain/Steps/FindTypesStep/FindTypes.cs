@@ -13,35 +13,33 @@ namespace ReflectionService.Domain.Steps.FindTypesStep
         {
             log = _log;
         }
-        private string stepId = null!;
-        private string operation = null!;
+
         internal protected override TypesResult StartCheck(
-            CheckingContext UserAssembly,
+            CheckingContext context,
             ManifestStep step,
             FindTypesArgs args)
         {
-            stepId = step.Id;
-            operation = step.Operation;
-            var types = UserAssembly.UserAssembly.GetTypes();
-
+            var types = context.UserAssembly.GetTypes();
             return new(types);
         }
 
-        internal protected override void WriteResult(CheckingContext context, TypesResult results)
+        internal protected override void WriteResult(CheckingContext context, ManifestStep step, TypesResult results)
         {
             var res = results.Types;
-            if (res == null)
+            if (res == null || res.Length == 0)
             {
                 context.StepResults.Add(new(
-                    stepId,
-                    operation,
+                    step.Id,
+                    step.Operation,
                     false,
                     FailureSeverity.Error,
                     "Пустая сборка, типы не найдены"));
                 return;
             }
+
             context.Roles["AllClasses"] = new(RoleValueKind.Types, res);
-            context.StepResults.Add(new(stepId, operation, true));
+            context.CachedTypes.AddRange(res);
+            context.StepResults.Add(new(step.Id, step.Operation, true));
         }
     }
 }

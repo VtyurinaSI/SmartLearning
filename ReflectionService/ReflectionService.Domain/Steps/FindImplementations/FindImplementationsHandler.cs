@@ -11,10 +11,10 @@ public sealed class FindImplementationsHandler : HandlerTemplateBase<FindImpleme
     {
         var input = GetStringProp(step, "InputRole") ?? GetStringProp(step, "Input");
         if (string.IsNullOrWhiteSpace(input))
-            throw new ArgumentException("Не заданы входные параметры.");
+            throw new ArgumentException("Не задан входной параметр.");
 
         if (!context.Roles.TryGetValue(input, out var role) || role.Kind != RoleValueKind.Types)
-            throw new ArgumentException($"Роль '{input}' не найдена или нет типа.");
+            throw new ArgumentException($"Роль '{input}' не содержит типов.");
 
         var abstractions =
             role.Value as Type[]
@@ -33,15 +33,25 @@ public sealed class FindImplementationsHandler : HandlerTemplateBase<FindImpleme
             .OrderBy(t => t.FullName)
             .ToArray();
 
-        var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
-        if (!string.IsNullOrWhiteSpace(output))
-            context.Roles[output] = new RoleValue(RoleValueKind.Types, impls);
-
-        context.StepResults.Add(new StepResult(step.Id, step.Operation, true));
         return new TypesResult(impls);
     }
 
-    internal protected override void WriteResult(CheckingContext context, TypesResult results) { }
+    internal protected override void WriteResult(CheckingContext context, ManifestStep step, TypesResult results)
+    {
+        var res = results.Types;
+        if (res == null || res.Length == 0)
+        {
+            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Реализации не найдены"));
+            return;
+        }
+
+        var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
+        if (!string.IsNullOrWhiteSpace(output))
+            context.Roles[output!] = new RoleValue(RoleValueKind.Types, res);
+
+        context.CachedTypes.AddRange(res);
+        context.StepResults.Add(new(step.Id, step.Operation, true));
+    }
 
     private static IEnumerable<Type> GetAllTypesSafe(Assembly asm)
     {
