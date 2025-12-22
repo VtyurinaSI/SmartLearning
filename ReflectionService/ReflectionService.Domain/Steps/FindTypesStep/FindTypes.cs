@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ReflectionService.Domain.Tests")]
 namespace ReflectionService.Domain.Steps.FindTypesStep
 {
-    public class FindTypes : HandlerTemplateBase<ResultOfFindTypes, FindTypesArgs>
+    public class FindTypes : HandlerTemplateBase<FindTypesArgs>
     {
         private readonly ILogger<FindTypes> log;
         public FindTypes(ILogger<FindTypes> _log) : base(nameof(FindTypes))
@@ -15,7 +15,7 @@ namespace ReflectionService.Domain.Steps.FindTypesStep
         }
         private string stepId = null!;
         private string operation = null!;
-        internal protected override ResultOfFindTypes StartCheck(
+        internal protected override TypesResult StartCheck(
             CheckingContext UserAssembly,
             ManifestStep step,
             FindTypesArgs args)
@@ -27,9 +27,9 @@ namespace ReflectionService.Domain.Steps.FindTypesStep
             return new(types);
         }
 
-        internal protected override void WriteResult(CheckingContext context, ResultOfFindTypes results)
+        internal protected override void WriteResult(CheckingContext context, TypesResult results)
         {
-            var res = results.Result;
+            var res = results.Types;
             if (res == null)
             {
                 context.StepResults.Add(new(

@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace ReflectionService.Domain
 {
-    public abstract class HandlerTemplateBase<Tres, Targs>
+    public abstract class HandlerTemplateBase<Targs>
     {
         public HandlerTemplateBase(string operationName) => OperationName = operationName;
         public string OperationName { get; }
@@ -18,7 +18,7 @@ namespace ReflectionService.Domain
         internal protected virtual Targs? ParseArgs(JsonElement args)
             => args.Deserialize<Targs>(JsonOptions.ManifestArgsConverterOptions);
 
-        internal protected abstract Tres StartCheck(CheckingContext context, ManifestStep step, Targs args);
-        internal protected abstract void WriteResult(CheckingContext context, Tres results);
+        internal protected abstract TypesResult StartCheck(CheckingContext context, ManifestStep step, Targs args);
+        internal protected abstract void WriteResult(CheckingContext context, TypesResult results);
     }
 }

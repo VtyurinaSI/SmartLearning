@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ReflectionService.Domain.Steps.FindTypesStep
+namespace ReflectionService.Domain
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TypeVisibility
