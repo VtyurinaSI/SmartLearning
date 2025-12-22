@@ -9,13 +9,13 @@ namespace ReflectionService.Domain
         public string OperationName { get; }
         public void Execute(CheckingContext context, ManifestStep step)
         {
-            var args = ParseAgrs(step.Args)
+            var args = ParseArgs(step.Args)
                 ?? throw new ArgumentException($"Невозможно прочитать агрументы для шага проверки \"{OperationName}\"");
 
             var res = StartCheck(context, step, args);
             WriteResult(context, res);
         }
-        internal protected virtual Targs? ParseAgrs(JsonElement args)
+        internal protected virtual Targs? ParseArgs(JsonElement args)
             => args.Deserialize<Targs>(JsonOptions.ManifestArgsConverterOptions);
 
         internal protected abstract Tres StartCheck(CheckingContext context, ManifestStep step, Targs args);

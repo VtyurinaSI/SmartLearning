@@ -8,18 +8,18 @@ namespace ReflectionService.Domain
         public CheckingContext(Assembly userAssembly, ManifestTarget target)
         {
             UserAssembly = userAssembly;
-            Target = target;
+            Target = target; 
         }
 
         public Assembly UserAssembly { get; }
 
         public ManifestTarget Target { get; }
 
-        public Dictionary<string, RoleValueKind> Roles { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, RoleValue> Roles { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public List<StepResult> StepResults { get; } = [];
 
         public List<string> Diagnostics { get; } = [];
-        public List<Type> CachedTypes { get; set; } = [];
+        public List<Type> CachedTypes { get; } = [];
     }
 }

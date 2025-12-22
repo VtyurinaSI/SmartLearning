@@ -16,8 +16,8 @@ namespace ReflectionService.Domain.Steps.FindTypesStep
         private string stepId = null!;
         private string operation = null!;
         internal protected override ResultOfFindTypes StartCheck(
-            CheckingContext UserAssembly, 
-            ManifestStep step, 
+            CheckingContext UserAssembly,
+            ManifestStep step,
             FindTypesArgs args)
         {
             stepId = step.Id;
@@ -29,18 +29,18 @@ namespace ReflectionService.Domain.Steps.FindTypesStep
 
         internal protected override void WriteResult(CheckingContext context, ResultOfFindTypes results)
         {
-            var res = (Type[]?)results.Result;
+            var res = results.Result;
             if (res == null)
             {
                 context.StepResults.Add(new(
-                    stepId, 
-                    operation, 
-                    false, 
-                    FailureSeverity.Error, 
+                    stepId,
+                    operation,
+                    false,
+                    FailureSeverity.Error,
                     "Пустая сборка, типы не найдены"));
                 return;
             }
-            context.CachedTypes.AddRange(res);
+            context.Roles["AllClasses"] = new(RoleValueKind.Types, res);
             context.StepResults.Add(new(stepId, operation, true));
         }
     }
