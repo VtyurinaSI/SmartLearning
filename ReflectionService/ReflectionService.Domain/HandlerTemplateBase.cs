@@ -15,10 +15,10 @@ namespace ReflectionService.Domain
             var res = StartCheck(context, step, args);
             WriteResult(context, res);
         }
-        private protected virtual Targs? ParseAgrs(JsonElement args)
+        internal protected virtual Targs? ParseAgrs(JsonElement args)
             => args.Deserialize<Targs>(JsonOptions.ManifestArgsConverterOptions);
 
-        private protected abstract Tres StartCheck(CheckingContext context, ManifestStep step, Targs args);
-        private protected abstract void WriteResult(CheckingContext context, Tres results);
+        internal protected abstract Tres StartCheck(CheckingContext context, ManifestStep step, Targs args);
+        internal protected abstract void WriteResult(CheckingContext context, Tres results);
     }
 }

@@ -20,7 +20,6 @@ namespace ReflectionService.Domain
         public List<StepResult> StepResults { get; } = [];
 
         public List<string> Diagnostics { get; } = [];
-        public IReadOnlyList<Type>? CachedTypes { get; set; }
+        public List<Type> CachedTypes { get; set; } = [];
     }
-
 }

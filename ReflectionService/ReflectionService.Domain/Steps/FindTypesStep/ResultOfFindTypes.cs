@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace ReflectionService.Domain.Steps.FindTypesStep
 {
-    public record ResultOfFindTypes();
+    public record ResultOfFindTypes(object Result);
 }

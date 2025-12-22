@@ -4,8 +4,8 @@
         string StepId,
         string Operation,
         bool Passed,
-        FailureSeverity Severity,
-        string Message,
+        FailureSeverity? Severity = null,
+        string? Message = null,
         string? Details = null
         );
 }
