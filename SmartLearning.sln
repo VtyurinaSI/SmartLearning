@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService.Domain", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReflectionService.Domain.Tests", "ReflectionService.Domain.Tests\ReflectionService.Domain.Tests.csproj", "{C2275142-DA71-4137-8F85-6BA50548D45B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrategyPatternExample", "StrategyPatternExample\StrategyPatternExample.csproj", "{ED2DCD6B-57AE-9081-B9BC-FBCCB56D421C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,6 +111,10 @@ Global
 		{C2275142-DA71-4137-8F85-6BA50548D45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2275142-DA71-4137-8F85-6BA50548D45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2275142-DA71-4137-8F85-6BA50548D45B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED2DCD6B-57AE-9081-B9BC-FBCCB56D421C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED2DCD6B-57AE-9081-B9BC-FBCCB56D421C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED2DCD6B-57AE-9081-B9BC-FBCCB56D421C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED2DCD6B-57AE-9081-B9BC-FBCCB56D421C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
