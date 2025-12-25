@@ -6,6 +6,7 @@ using ReflectionService.Domain.Steps.FindTypesStep;
 using ReflectionService.Domain.Steps.FindInterface;
 using ReflectionService.Domain.Steps.FindImplementations;
 using ReflectionService.Domain.Steps.FindCtor;
+using ReflectionService.Domain.Steps.CountTypes;
 
 namespace ReflectionService.Domain.Strategies;
 
@@ -15,6 +16,7 @@ public sealed class CodeCheckingStrategy
     private readonly FindInterfacesHandler findInterfaces;
     private readonly FindImplementationsHandler findImplementations;
     private readonly FindCtorConsumersHandler findCtorConsumers;
+    private readonly CountTypesHandler countTypes;
 
     public CodeCheckingStrategy()
     {
@@ -22,17 +24,8 @@ public sealed class CodeCheckingStrategy
         findInterfaces = new FindInterfacesHandler();
         findImplementations = new FindImplementationsHandler();
         findCtorConsumers = new FindCtorConsumersHandler();
+        countTypes = new CountTypesHandler();
     }
-
-    /// <summary>
-    /// Выполнить последовательную проверку:
-    /// 1) все типы,
-    /// 2) интерфейсы (опц. фильтр по имени),
-    /// 3) реализации интерфейсов,
-    /// 4) проверить, что реализаций >= minImplementations (по умолчанию 2),
-    /// 5) найти классы, принимающие интерфейс в конструкторе.
-    /// Возвращает CheckingContext с Roles, CachedTypes и StepResults.
-    /// </summary>
     public CheckingContext Run(Assembly userAssembly, ManifestTarget target, string interfaceNameRegex = ".*", int minImplementations = 2)
     {
         var context = new CheckingContext(userAssembly, target);
@@ -58,9 +51,16 @@ public sealed class CodeCheckingStrategy
             return context;
         }
 
-        var implArgsJson = JsonDocument.Parse($@"{{""visibility"": ""Any"", ""includeAbstract"": false}}").RootElement;
-        var stepFindImpl = new ManifestStep { Id = "step-findimpls", Operation = "FindImplementations", Args = implArgsJson, InputRole = "Interfaces", OutputRole = "Implementations" };
-        findImplementations.Execute(context, stepFindImpl);
+       var ctArgsJson = JsonDocument.Parse($@"{{""kind"": ""Class"", ""visibility"": ""Any"", ""min"": {minImplementations} }}").RootElement;
+        var stepCountImpls = new ManifestStep
+        {
+            Id = "step-countimpls",
+            Operation = "CountTypes",
+            Args = ctArgsJson,
+            InputRole = "Interfaces",
+            OutputRole = "Implementations"
+        };
+        countTypes.Execute(context, stepCountImpls);
 
         if (!context.Roles.TryGetValue("Implementations", out var implRole) || implRole.Kind != RoleValueKind.Types)
         {
@@ -77,7 +77,7 @@ public sealed class CodeCheckingStrategy
         context.StepResults.Add(new("step-assert-count", "AssertCount", true));
 
         var consumersArgsJson = JsonDocument.Parse($@"{{""visibility"": ""Any""}}").RootElement;
-        var stepFindConsumers = new ManifestStep { Id = "step-findconsumers", Operation = "FindCtorConsumers", Args = consumersArgsJson, InputRole = "Implementations", OutputRole = "Consumers" };
+         var stepFindConsumers = new ManifestStep { Id = "step-findconsumers", Operation = "FindCtorConsumers", Args = consumersArgsJson, InputRole = "Interfaces", OutputRole = "Consumers" };
         findCtorConsumers.Execute(context, stepFindConsumers);
 
         return context;
