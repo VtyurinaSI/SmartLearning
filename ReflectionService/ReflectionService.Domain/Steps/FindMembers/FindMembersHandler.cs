@@ -6,16 +6,13 @@ namespace ReflectionService.Domain.Steps.FindMembers;
 
 public sealed class FindMembersHandler : HandlerTemplateBase<FindMembersArgs>
 {
-    // временное хранилище найденных членов для передачи в WriteResult
-    private MemberInfo[]? lastFoundMembers;
-
     public FindMembersHandler() : base("FindMembers") { }
 
     internal protected override TypesResult StartCheck(CheckingContext context, ManifestStep step, FindMembersArgs args)
     {
-        var input = GetStringProp(step, "InputRole") ?? GetStringProp(step, "Input");
+        var input = step.InputRole;
         if (string.IsNullOrWhiteSpace(input))
-            throw new ArgumentException("Не указана входная роль (InputRole / Input).");
+            throw new ArgumentException("Не указана входная роль (input).");
 
         if (!context.Roles.TryGetValue(input!, out var role) || role.Kind != RoleValueKind.Types)
             throw new ArgumentException($"Роль '{input}' не содержит типов.");
@@ -86,7 +83,7 @@ public sealed class FindMembersHandler : HandlerTemplateBase<FindMembersArgs>
             {
                 foreach (var c in t.GetConstructors(bf))
                 {
-                    if (!MatchStatic(false, args.Static)) continue; // ctor never static in this sense
+                    if (!MatchStatic(false, args.Static)) continue;
                     if (nameRe != null && !nameRe.IsMatch(c.Name)) continue;
                     if (memberTypeRe != null && !memberTypeRe.IsMatch(c.DeclaringType?.FullName ?? "")) continue;
                     found.Add(c);
@@ -94,23 +91,37 @@ public sealed class FindMembersHandler : HandlerTemplateBase<FindMembersArgs>
             }
         }
 
-        lastFoundMembers = found.ToArray();
-        var declaringTypes = lastFoundMembers.Select(m => m.DeclaringType).Where(t => t is not null).Distinct().ToArray()!;
+        var members = found.ToArray();
+
+        var outputName = !string.IsNullOrWhiteSpace(step.OutputRole) ? step.OutputRole! : step.Id;
+        context.Roles[outputName] = new RoleValue(RoleValueKind.Members, members);
+
+        var declaringTypes = members
+            .Select(m => m.DeclaringType)
+            .Where(t => t is not null)
+            .Distinct()
+            .ToArray()!;
+
         return new TypesResult(declaringTypes);
     }
 
     internal protected override void WriteResult(CheckingContext context, ManifestStep step, TypesResult results)
     {
-        var members = lastFoundMembers ?? Array.Empty<MemberInfo>();
+        var outputName = !string.IsNullOrWhiteSpace(step.OutputRole) ? step.OutputRole! : step.Id;
+
+        if (!context.Roles.TryGetValue(outputName, out var role) || role.Kind != RoleValueKind.Members)
+        {
+            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Members output role missing"));
+            return;
+        }
+
+        var members = role.Value as MemberInfo[] ?? Array.Empty<MemberInfo>();
+
         if (members.Length == 0)
         {
             context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Члены не найдены"));
             return;
         }
-
-        var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
-        if (!string.IsNullOrWhiteSpace(output))
-            context.Roles[output!] = new RoleValue(RoleValueKind.Members, members);
 
         var types = results.Types;
         if (types is not null && types.Length > 0)
@@ -134,7 +145,4 @@ public sealed class FindMembersHandler : HandlerTemplateBase<FindMembersArgs>
     private static bool IsCompilerGenerated(Type t) =>
         t.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), inherit: false)
         || (t.FullName?.Contains("<", StringComparison.Ordinal) ?? false);
-
-    private static string? GetStringProp(object obj, string propName)
-        => obj.GetType().GetProperty(propName)?.GetValue(obj) as string;
 }

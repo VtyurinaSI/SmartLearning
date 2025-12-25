@@ -36,7 +36,6 @@ public sealed class AssertMemberSignatureHandler : HandlerTemplateBase<AssertMem
             if (!MatchStatic(MemberIsStatic(m), args.Static)) continue;
             if (nameRe != null && !nameRe.IsMatch(m.Name)) continue;
 
-            // return type and params
             Type? retType = m switch
             {
                 MethodInfo mi => mi.ReturnType,

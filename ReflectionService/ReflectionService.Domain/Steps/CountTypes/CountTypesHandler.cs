@@ -13,7 +13,6 @@ public sealed class CountTypesHandler : HandlerTemplateBase<CountTypesArgs>
     {
         var excludeCg = args.ExcludeCompilerGenerated ?? context.Target.ExcludeCompilerGenerated;
 
-        // Попытка получить входную роль (InputRole / Input)
         var inputRoleName = GetStringProp(step, "InputRole") ?? GetStringProp(step, "Input");
         Type[]? roleTypes = null;
         if (!string.IsNullOrWhiteSpace(inputRoleName))

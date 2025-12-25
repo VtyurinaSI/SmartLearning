@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ReflectionService.Domain.ManifestModel;
 
 public static class StepContracts
@@ -54,6 +52,25 @@ public static class StepContracts
                 ArgsSummary: "to: self|role:<name>, kinds: field|property|constructorParam|methodParam, (optional) min",
                 Input: RoleValueKind.Types,
                 Output: RoleValueKind.Dependencies
+            )
+            ,
+            ["HasCollectionDependency"] = new(
+                Operation: "HasCollectionDependency",
+                ArgsSummary: "to: self|role:<name>, kinds: field|property|constructorParam|methodParam, (optional) min - looks for collection-of-T dependencies",
+                Input: RoleValueKind.Types,
+                Output: RoleValueKind.Dependencies
+            ),
+            ["AssertExists"] = new(
+                Operation: "AssertExists",
+                ArgsSummary: "min (optional, default=1)",
+                Input: RoleValueKind.Types,
+                Output: RoleValueKind.None
+            ),
+            ["AssertModifiers"] = new(
+                Operation: "AssertModifiers",
+                ArgsSummary: "sealed|abstract|staticClass|visibility",
+                Input: RoleValueKind.SingleType,
+                Output: RoleValueKind.None
             )
         };
 }
