@@ -1,183 +1,271 @@
 ﻿using MassTransit;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using MinIoStub;
 using SmartLearning.Contracts;
+using SmartLearning.FilesUtils;
+using System.Diagnostics;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Text;
 
-namespace CompilerSevice
+namespace CompilerSevice;
+
+public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
 {
-    public class CompileRequestedConsumer : IConsumer<CompileRequested>
+    private readonly ILogger<CompileRequestedConsumer> _log;
+    private readonly HttpClient _http;
+
+    public CompileRequestedConsumer(
+        ILogger<CompileRequestedConsumer> log,
+        HttpClient http)
     {
-        private readonly ILogger<CompileRequestedConsumer> _log;
-        private readonly IObjectStorageRepository _repo;
-        private readonly HttpClient _http;
+        _log = log;
+        _http = http;
+    }
 
-        public CompileRequestedConsumer(IObjectStorageRepository repo, ILogger<CompileRequestedConsumer> log, HttpClient http)
+    public async Task Consume(ConsumeContext<CompileRequested> context)
+    {
+        var msg = context.Message;
+
+        string? workDir = null;
+
+        try
         {
-            _repo = repo;
-            _log = log;
-            _http = http;
-            _log.LogInformation("Создан {obj}, http-client: {cl}", nameof(CompileRequestedConsumer), _http.BaseAddress);
-        }
+            _log.LogInformation("CompileRequested received. UserId={UserId} TaskId={TaskId}", msg.UserId, msg.TaskId);
 
-        public async Task Consume(ConsumeContext<CompileRequested> context)
-        {
-            _log.LogInformation("Compile requested: CorrelationId={Cid}, UserId={UserId}, TaskId={TaskId}",
-                context.Message.CorrelationId, context.Message.UserId, context.Message.TaskId);
+            var source = await SourceStageLoader.LoadAsync(
+                download: ct => DownloadStageAsync(
+                    userId: msg.UserId,
+                    taskId: msg.TaskId,
+                    stage: "load",
+                    fileName: null,
+                    ct: ct),
+                correlationId: msg.CorrelationId,
+                ct: context.CancellationToken);
 
-            try
+            workDir = source.WorkDir;
+
+            _log.LogInformation(
+                "Downloaded sources. Bytes={Bytes} ContentType={ContentType} FileName={FileName} ElapsedMs={ElapsedMs}",
+                source.Bytes,
+                source.ContentType,
+                source.FileName,
+                source.DownloadTime.TotalMilliseconds);
+
+            _log.LogInformation("Source format detected. IsZip={IsZip}", source.IsZip);
+
+            if (source.IsZip && source.ExtractInfo is not null && source.ExtractTime is not null)
             {
-                var origCode = await LoadSourceAsync(context);
-                if (string.IsNullOrWhiteSpace(origCode))
-                {
-                    _log.LogError("Compiling code for {Cid} is empty", context.Message.CorrelationId);
-                    return;
-                }
+                _log.LogInformation(
+                    "Extracted zip. Entries={Entries} Files={Files} Dirs={Dirs} TotalUncompressedBytes={TotalUncompressedBytes} ElapsedMs={ElapsedMs}",
+                    source.ExtractInfo.Entries,
+                    source.ExtractInfo.Files,
+                    source.ExtractInfo.Dirs,
+                    source.ExtractInfo.TotalUncompressedBytes,
+                    source.ExtractTime.Value.TotalMilliseconds);
+            }
 
-                _log.LogDebug("Compiling code for {Cid}: \n{Code}", context.Message.CorrelationId, origCode);
+            var extractDir = workDir;
 
-                var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
-                var syntaxTree = CSharpSyntaxTree.ParseText(origCode, parseOptions);
-                var references = GetFrameworkReferences();
+            var targets = FindTargets(extractDir);
 
-                var dllCompilation = CreateCompilation(
-                    syntaxTree,
-                    references,
-                    OutputKind.DynamicallyLinkedLibrary,
-                    "UserLibrary");
+            if (targets.Solutions.Count == 0 && targets.Projects.Count == 0)
+                throw new InvalidOperationException("No solution or project files found");
 
-                var dllEmit = EmitToArray(dllCompilation);
+            if (targets.Solutions.Count > 0)
+                _log.LogInformation("Solutions: {List}", string.Join(" | ", targets.Solutions.Take(20)));
 
-                EmitResultInfo? exeEmit = null;
+            if (targets.Projects.Count > 0)
+                _log.LogInformation("Projects: {List}", string.Join(" | ", targets.Projects.Take(20)));
+
+            var target = FindBuildTarget(extractDir);
+            var targetDir = Path.GetDirectoryName(target)!;
+
+            _log.LogInformation("Selected build target: {Target}. TargetDir={TargetDir}", target, targetDir);
+
+            var outDir = Path.Combine(workDir, "_out");
+            Directory.CreateDirectory(outDir);
+
+            var swRestore = Stopwatch.StartNew();
+            var restore = await RunDotnet(targetDir, $"restore \"{target}\" --nologo", context.CancellationToken);
+            swRestore.Stop();
+
+            _log.LogInformation(
+                "dotnet restore finished in {Elapsed}ms ExitCode={ExitCode}",
+                swRestore.ElapsedMilliseconds,
+                restore.ExitCode);
+
+            if (restore.ExitCode != 0)
+                throw new InvalidOperationException($"dotnet restore failed: {Trim(restore.StdErr, 4000)}");
+
+            var swBuild = Stopwatch.StartNew();
+            var build = await RunDotnet(
+                targetDir,
+                $"build \"{target}\" -c Release -o \"{outDir}\" --nologo",
+                context.CancellationToken);
+            swBuild.Stop();
+
+            _log.LogInformation(
+                "dotnet build finished in {Elapsed}ms ExitCode={ExitCode}",
+                swBuild.ElapsedMilliseconds,
+                build.ExitCode);
+
+            if (build.ExitCode != 0)
+                throw new InvalidOperationException($"dotnet build failed: {Trim(build.StdErr, 4000)}");
+
+            var files = Directory.GetFiles(outDir, "*", SearchOption.AllDirectories);
+
+            if (files.Length == 0)
+                throw new InvalidOperationException("Build produced no output files");
+
+            using var gate = new SemaphoreSlim(4);
+
+            var uploads = files.Select(async path =>
+            {
+                await gate.WaitAsync(context.CancellationToken);
                 try
                 {
-                    var exeCompilation = CreateCompilation(
-                        syntaxTree,
-                        references,
-                        OutputKind.ConsoleApplication,
-                        "UserProgram");
+                    var rel = Path.GetRelativePath(outDir, path).Replace('\\', '/');
+                    var bytes = await File.ReadAllBytesAsync(path, context.CancellationToken);
 
-                    exeEmit = EmitToArray(exeCompilation);
+                    await UploadStageAsync(
+                        msg.UserId,
+                        msg.TaskId,
+                        "build",
+                        rel,
+                        bytes,
+                        "application/octet-stream",
+                        context.CancellationToken);
                 }
-                catch (Exception ex)
+                finally
                 {
-                    _log.LogWarning(ex, "Exe compilation failed for {Cid}, dll compilation attempted.", context.Message.CorrelationId);
+                    gate.Release();
                 }
+            });
 
-                var sb = BuildDiagnosticsLog(dllEmit);
-                _log.LogInformation(sb.ToString());
+            await Task.WhenAll(uploads);
 
-                if (dllEmit.Success)
-                    await context.Publish(new CompilationFinished(context.Message.CorrelationId,
-                        context.Message.UserId, context.Message.TaskId));
-                else
-                    await context.Publish(new CompilationFailed(context.Message.CorrelationId,
-                        context.Message.UserId, context.Message.TaskId));
-
-                await _repo.SaveCompilationAsync(context.Message.CorrelationId, sb.ToString(), context.CancellationToken);
-
-                if (dllEmit.Success && dllEmit.Bytes is { Length: > 0 } dllBytes)
-                    await UploadAssemblyAsync("build", "program.dll", dllBytes, context);
-
-                if (exeEmit is { Success: true, Bytes: { Length: > 0 } exeBytes })
-                    await UploadAssemblyAsync("build", "program.exe", exeBytes, context);
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "Error while compiling source for {Cid}", context.Message.CorrelationId);
-                await context.Publish(new CompilationFailed(context.Message.CorrelationId,
-                        context.Message.UserId, context.Message.TaskId));
-            }
+            await context.Publish(new CompilationFinished(
+                msg.CorrelationId,
+                msg.UserId,
+                msg.TaskId));
         }
-
-        private async Task<string> LoadSourceAsync(ConsumeContext<CompileRequested> context)
+        catch (Exception ex)
         {
-            var url = $"/objects/load/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={null}";
+            _log.LogError(ex, "Compile failed");
 
-            using var resp = await _http.GetAsync(url, context.CancellationToken);
-            if (resp.StatusCode == HttpStatusCode.NotFound)
-            {
-                _log.LogError("ObjectStorage returned 404 for {Cid}", context.Message.CorrelationId);
-                return string.Empty;
-            }
-
-            resp.EnsureSuccessStatusCode();
-
-            var bytes = await resp.Content.ReadAsByteArrayAsync(context.CancellationToken);
-            return Encoding.UTF8.GetString(bytes);
+            await context.Publish(new CompilationFailed(
+                msg.CorrelationId,
+                msg.UserId,
+                msg.TaskId));
         }
-
-        private static MetadataReference[] GetFrameworkReferences()
+        finally
         {
-            var tpa = (string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!;
-            return tpa
-                .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => MetadataReference.CreateFromFile(p))
-                .ToArray();
+            if (workDir is not null)
+                TryDelete(workDir);
         }
-
-        private static CSharpCompilation CreateCompilation(
-            SyntaxTree tree,
-            MetadataReference[] references,
-            OutputKind kind,
-            string assemblyName)
-        {
-            var options = new CSharpCompilationOptions(kind);
-            return CSharpCompilation.Create(
-                assemblyName,
-                new[] { tree },
-                references,
-                options);
-        }
-
-        private static EmitResultInfo EmitToArray(CSharpCompilation compilation)
-        {
-            using var ms = new MemoryStream();
-            var result = compilation.Emit(ms);
-
-            byte[]? bytes = null;
-            if (result.Success)
-            {
-                ms.Position = 0;
-                bytes = ms.ToArray();
-            }
-
-            return new EmitResultInfo(result.Success, bytes, result.Diagnostics);
-        }
-
-        private static StringBuilder BuildDiagnosticsLog(EmitResultInfo emitInfo)
-        {
-            var result = emitInfo.Diagnostics;
-
-            var sb = new StringBuilder();
-            sb.Append("Compilation ");
-            sb.Append(emitInfo.Success ? "Success" : "Failed");
-            sb.Append(". ");
-            sb.AppendLine(string.Join(",",
-                result.GroupBy(r => r.Severity)
-                      .Select(g => $"{g.Key} - {g.Count()}")));
-
-            foreach (var d in result)
-                sb.AppendLine(d.ToString());
-
-            return sb;
-        }
-
-        private async Task UploadAssemblyAsync(string stage, string fileName, byte[] bytes, ConsumeContext<CompileRequested> context)
-        {
-            var url = $"/objects/{stage}/file?userId={context.Message.UserId}&taskId={context.Message.TaskId}&fileName={Uri.EscapeDataString(fileName)}";
-            using var content = new ByteArrayContent(bytes);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            using var resp = await _http.PostAsync(url, content, context.CancellationToken);
-            resp.EnsureSuccessStatusCode();
-        }
-
-        private readonly record struct EmitResultInfo(
-            bool Success,
-            byte[]? Bytes,
-            IReadOnlyList<Diagnostic> Diagnostics);
     }
+
+    private async Task UploadStageAsync(
+        Guid userId,
+        long taskId,
+        string stage,
+        string fileName,
+        byte[] bytes,
+        string contentType,
+        CancellationToken ct)
+    {
+        using var content = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(bytes), "file", fileName }
+        };
+
+        var url = $"/objects/{stage}/file?userId={userId}&taskId={taskId}&fileName={Uri.EscapeDataString(fileName)}";
+        var resp = await _http.PostAsync(url, content, ct);
+
+        resp.EnsureSuccessStatusCode();
+    }
+
+    private async Task<SourceStageLoader.StorageDownload> DownloadStageAsync(
+        Guid userId,
+        long taskId,
+        string stage,
+        string? fileName,
+        CancellationToken ct)
+    {
+        var url = fileName is null
+            ? $"/objects/{stage}/file?userId={userId}&taskId={taskId}"
+            : $"/objects/{stage}/file?userId={userId}&taskId={taskId}&fileName={Uri.EscapeDataString(fileName)}";
+
+        using var resp = await _http.GetAsync(url, ct);
+
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+            return new SourceStageLoader.StorageDownload(Array.Empty<byte>(), "", "");
+
+        resp.EnsureSuccessStatusCode();
+
+        var bytes = await resp.Content.ReadAsByteArrayAsync(ct);
+        var name = resp.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "source.zip";
+        var ctType = resp.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+
+        return new SourceStageLoader.StorageDownload(bytes, ctType, name);
+    }
+
+    private static TargetsInfo FindTargets(string root)
+    {
+        var solutions = Directory.GetFiles(root, "*.sln", SearchOption.AllDirectories);
+        var projects = Directory.GetFiles(root, "*.csproj", SearchOption.AllDirectories);
+
+        return new TargetsInfo(solutions, projects);
+    }
+
+    private static string FindBuildTarget(string root)
+    {
+        var sln = Directory.GetFiles(root, "*.sln", SearchOption.AllDirectories).FirstOrDefault();
+        if (sln is not null)
+            return sln;
+
+        var proj = Directory.GetFiles(root, "*.csproj", SearchOption.AllDirectories).FirstOrDefault();
+        if (proj is not null)
+            return proj;
+
+        throw new InvalidOperationException("No build target found");
+    }
+
+    private static async Task<DotnetResult> RunDotnet(
+        string workingDir,
+        string args,
+        CancellationToken ct)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = args,
+            WorkingDirectory = workingDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        using var proc = Process.Start(psi)!;
+
+        var stdout = proc.StandardOutput.ReadToEndAsync();
+        var stderr = proc.StandardError.ReadToEndAsync();
+
+        await proc.WaitForExitAsync(ct);
+
+        return new DotnetResult(proc.ExitCode, await stdout, await stderr);
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
+        catch { }
+    }
+
+    private static string Trim(string s, int max)
+        => s.Length <= max ? s : s[..max];
+
+    private sealed record DotnetResult(int ExitCode, string StdOut, string StdErr);
+
+    private sealed record TargetsInfo(IReadOnlyList<string> Solutions, IReadOnlyList<string> Projects);
 }

@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MinIoStub\MinIoStub.csproj" />
     <ProjectReference Include="..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
+    <ProjectReference Include="..\SmartLearning.FilesUtils\SmartLearning.FilesUtils.csproj" />
   </ItemGroup>
 
 </Project>
