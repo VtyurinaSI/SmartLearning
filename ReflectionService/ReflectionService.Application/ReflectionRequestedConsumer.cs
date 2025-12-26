@@ -2,6 +2,7 @@
 using ReflectionService.Domain;
 using ReflectionService.Domain.ManifestModel;
 using ReflectionService.Domain.PipelineOfCheck;
+using ReflectionService.Domain.Reporting;
 using SmartLearning.Contracts;
 using SmartLearning.FilesUtils;
 using System.Net;
@@ -20,13 +21,15 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
     public ReflectionRequestedConsumer(
         ILogger<ReflectionRequestedConsumer> log,
         HttpClient http,
-        CheckingPipeline pipeline)
+        CheckingPipeline pipeline,
+        ICheckingReportBuilder reporter)
     {
         _log = log;
         _http = http;
         _pipeline = pipeline;
+        _reporter = reporter;
     }
-
+    private readonly ICheckingReportBuilder _reporter;
     public async Task Consume(ConsumeContext<TestRequested> context)
     {
         string? workDir = null;
@@ -78,13 +81,13 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
                     ? alc.LoadFromAssemblyPath(depPath)
                     : null;
             };
-
+            CheckingContext? checkingCtx = null;
             try
             {
                 var asm = alc.LoadFromAssemblyPath(entryAssemblyPath);
 
                 _pipeline.SetPipeline(manifest);
-                var checkingCtx = _pipeline.ExecutePipeline(asm, manifest.Target);
+                checkingCtx = _pipeline.ExecutePipeline(asm, manifest.Target);
 
                 var passed = checkingCtx.StepResults.All(r => r.Passed);
 
@@ -118,6 +121,11 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
             }
             finally
             {
+                if (checkingCtx != null)
+                {
+                    string checkReport = _reporter.Build(checkingCtx);
+                    _log.LogDebug(checkReport);
+                }
                 alc.Unload();
                 GC.Collect();
                 GC.WaitForPendingFinalizers();

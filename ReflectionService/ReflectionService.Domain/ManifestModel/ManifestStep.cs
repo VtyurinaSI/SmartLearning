@@ -11,6 +11,12 @@ public sealed record ManifestStep
     [JsonPropertyName("operation")]
     public required string Operation { get; init; }
 
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
+
     [JsonPropertyName("input")]
     public string? InputRole { get; init; }
 
@@ -18,7 +24,7 @@ public sealed record ManifestStep
     public string? OutputRole { get; init; }
 
     [JsonPropertyName("args")]
-    public JsonElement Args {  get; init; }
+    public JsonElement Args { get; init; }
 
     [JsonPropertyName("onFail")]
     public StepFailurePolicy OnFail { get; init; } = new(FailureSeverity.Error, "Step failed.");

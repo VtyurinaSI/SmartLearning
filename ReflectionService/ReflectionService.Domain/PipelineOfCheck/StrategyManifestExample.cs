@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReflectionService.Domain.PipelineOfCheck
+﻿namespace ReflectionService.Domain.PipelineOfCheck
 {
     public static class StrategyManifestExample
     {

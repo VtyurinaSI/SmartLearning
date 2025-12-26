@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Gateway\GatewayPatterns.Infrastructure\GatewayPatterns.Infrastructure.csproj" />
     <ProjectReference Include="..\..\MinIoStub\MinIoStub.csproj" />
     <ProjectReference Include="..\..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
     <ProjectReference Include="..\OrchestrPatterns.Domain\OrchestrPatterns.Domain.csproj" />

@@ -10,10 +10,14 @@ public sealed class CheckingPipeline
 
     private readonly List<(ManifestStep Step, HandlerTemplateBase Handler)> _pipeline = new();
 
+    private CheckManifest? _manifest;
+
     public CheckingPipeline(IStepHandlerFactory factory) => _factory = factory;
 
     public void SetPipeline(CheckManifest rules)
     {
+        _manifest = rules;
+
         _pipeline.Clear();
 
         foreach (var step in rules.Steps)
@@ -25,7 +29,7 @@ public sealed class CheckingPipeline
 
     public CheckingContext ExecutePipeline(Assembly userAssembly, ManifestTarget target)
     {
-        var ctx = new CheckingContext(userAssembly, target);
+        var ctx = new CheckingContext(userAssembly, target, _manifest);
 
         foreach (var (step, handler) in _pipeline)
         {
