@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ReflectionService.Domain.PipelineOfCheck
 {
-    internal static class StrategyManifest
+    internal static class StrategyManifestExample
     {
         internal static string Manifest { get; } =
             @"{
