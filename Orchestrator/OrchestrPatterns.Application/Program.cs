@@ -121,7 +121,7 @@ orc.MapPost("/check", async (IBus bus,
         return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
 
     await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
-    await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    await hub.WaitAsync(id, TimeSpan.FromMinutes(10), ct);
     var minioClient = _http.CreateClient("MinioStorage");
     var url = $"/objects/llm/file?userId={dto.UserId}&taskId={dto.TaskId}&fileName={"review.txt"}";
 
