@@ -12,7 +12,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 3s
-      retries: 40        
+      retries: 40
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -34,7 +34,7 @@ services:
       - LC_ALL=ru_RU.UTF-8
     volumes:
       - ollama:/root/.ollama
-    command: ["serve"]   
+    command: ["serve"]
     healthcheck:
       test: ["CMD", "sh", "-lc", "ollama list >/dev/null 2>&1"]
       interval: 10s
@@ -53,6 +53,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj
     environment:
@@ -71,6 +72,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj
     environment:
@@ -86,6 +88,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: UserService/UserSvcStub.csproj
     environment:
@@ -101,6 +104,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: sdk-runtime
       args:
         PROJECT_PATH: CompilerSevice/CompilerSevice.csproj
     environment:
@@ -110,28 +114,31 @@ services:
       ollama-pull-llama: { condition: service_completed_successfully }
       postgres:  { condition: service_healthy }
       rabbitmq:  { condition: service_healthy }
-    ports: ["6002:8080"]  
+    ports: ["6002:8080"]
+    volumes:
+      - nuget_cache:/root/.nuget/packages
 
   reflection:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: ReflectionService/ReflectionService.Application/ReflectionService.Application.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       APP_DLL: ReflectionService.Application.dll
     depends_on:
-      object-storage-service: {condition: service_started}
+      object-storage-service: { condition: service_started }
       postgres:  { condition: service_healthy }
       rabbitmq:  { condition: service_healthy }
     ports: ["6004:8080"]
-
 
   llm:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: LlmService/LlmService.csproj
     environment:
@@ -141,13 +148,14 @@ services:
       ollama-pull-llama: { condition: service_completed_successfully }
       postgres:  { condition: service_healthy }
       rabbitmq:  { condition: service_healthy }
-      ollama:    { condition: service_started }      
+      ollama:    { condition: service_started }
     ports: ["6003:8080"]
 
   progress:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: ProgressService/ProgressService.csproj
     environment:
@@ -162,6 +170,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: AuthService/AuthService.csproj
     environment:
@@ -173,7 +182,6 @@ services:
     volumes:
       - authkeys:/root/.aspnet/DataProtection-Keys
     ports: ["6011:8080"]
-    
 
   minio:
     image: minio/minio:latest
@@ -185,8 +193,8 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"   
-      - "9001:9001"   
+      - "9000:9000"
+      - "9001:9001"
 
   minio-init:
     image: minio/mc:latest
@@ -203,17 +211,18 @@ services:
     volumes:
       - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
     entrypoint: ["/bin/sh","-c","tr -d '\\r' < /init/30-init-minio.sh > /tmp/init.sh && chmod +x /tmp/init.sh && /tmp/init.sh"]
-    
+
   object-storage-service:
     build:
       context: .
       dockerfile: ./Dockerfile
+      target: runtime
       args:
         PROJECT_PATH: ObjectStorageService/ObjectStorageService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:8080
-      APP_DLL: ObjectStorageService.dll 
+      APP_DLL: ObjectStorageService.dll
     depends_on:
       minio:
         condition: service_started
@@ -226,3 +235,4 @@ volumes:
   ollama:
   authkeys:
   minio_data:
+  nuget_cache:
