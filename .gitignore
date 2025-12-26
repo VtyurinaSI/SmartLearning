@@ -62,3 +62,6 @@
 /StrategyPatternExample/obj
 /SmartLearning.FilesUtils/obj
 *.zip
+/PatternForCheckingExamples/StrategyPatternExample/bin/Debug/net8.0
+/PatternForCheckingExamples/StrategyPatternExample/obj/Debug/net8.0
+/PatternForCheckingExamples/StrategyPatternExample/obj
