@@ -3,6 +3,7 @@ using SmartLearning.Contracts;
 using SmartLearning.FilesUtils;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 
 namespace CompilerSevice;
 
@@ -163,22 +164,19 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
     }
 
     private async Task UploadStageAsync(
-        Guid userId,
-        long taskId,
-        string stage,
-        string fileName,
-        byte[] bytes,
-        string contentType,
-        CancellationToken ct)
+     Guid userId,
+     long taskId,
+     string stage,
+     string fileName,
+     byte[] bytes,
+     string contentType,
+     CancellationToken ct)
     {
-        using var content = new MultipartFormDataContent
-        {
-            { new ByteArrayContent(bytes), "file", fileName }
-        };
+        using var content = new ByteArrayContent(bytes);
+        content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
         var url = $"/objects/{stage}/file?userId={userId}&taskId={taskId}&fileName={Uri.EscapeDataString(fileName)}";
-        var resp = await _http.PostAsync(url, content, ct);
-
+        using var resp = await _http.PostAsync(url, content, ct);
         resp.EnsureSuccessStatusCode();
     }
 
