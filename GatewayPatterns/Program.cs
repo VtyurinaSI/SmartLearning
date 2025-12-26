@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using MinIoStub;
 using Npgsql;
 using Serilog;
+using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using SmartLearning.Contracts;
 using System.Data;
@@ -76,11 +77,16 @@ builder.Services.AddHttpClient<GatewayObjectStorageClient>(c =>
 });
 
 builder.Host.UseSerilog((ctx, lc) =>
+{
     lc.ReadFrom.Configuration(ctx.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(
-        theme: AnsiConsoleTheme.Sixteen,
-        outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+      .MinimumLevel.Debug()
+      .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+      .MinimumLevel.Override("Microsoft.Extensions.Http", LogEventLevel.Warning)
+      .MinimumLevel.Override("System.Net.Http", LogEventLevel.Warning)
+      .Enrich.FromLogContext()
+      .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+}); 
+
 builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck("gateway_self", () => HealthCheckResult.Healthy("OK"))

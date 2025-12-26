@@ -8,14 +8,17 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, lc) =>
-{
-    lc.ReadFrom.Configuration(ctx.Configuration)
-      .Enrich.FromLogContext()
-      .WriteTo.Console(
-          outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
-
-    lc.MinimumLevel.Is(LogEventLevel.Debug);
-});
+    {
+        lc.ReadFrom.Configuration(ctx.Configuration)
+          .MinimumLevel.Debug()
+          .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+          .MinimumLevel.Override("Microsoft.Extensions.Http", LogEventLevel.Warning)
+          .MinimumLevel.Override("System.Net.Http", LogEventLevel.Warning)
+          .MinimumLevel.Override("MassTransit", LogEventLevel.Information)
+          .MinimumLevel.Override("RabbitMQ.Client", LogEventLevel.Warning)
+          .Enrich.FromLogContext()
+          .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+    });
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
