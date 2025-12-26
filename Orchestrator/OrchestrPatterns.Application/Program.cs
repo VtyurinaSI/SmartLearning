@@ -100,7 +100,6 @@ orc.MapPost("/check", async (IBus bus,
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
-    //await bus.Publish(new StartCompile(id, dto.UserId, dto.TaskId), ct);
 
     await bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
 
