@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace ReflectionService.Domain.PipelineOfCheck
 {
-    internal static class StrategyManifestExample
+    public static class StrategyManifestExample
     {
-        internal static string Manifest { get; } =
+        public static string Manifest { get; } =
             @"{
           ""id"": ""check-interfaces-consumers"",
           ""pattern"": ""default"",

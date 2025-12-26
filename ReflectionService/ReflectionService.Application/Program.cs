@@ -1,6 +1,7 @@
 using MassTransit;
 using ReflectionService;
 using ReflectionService.Application;
+using ReflectionService.Domain.PipelineOfCheck;
 using Serilog;
 using Serilog.Events;
 
@@ -46,6 +47,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddReflectionStepHandlers();
+builder.Services.AddTransient<CheckingPipeline>();
 
 var app = builder.Build();
 
