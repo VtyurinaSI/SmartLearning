@@ -37,7 +37,7 @@ services:
     command: ["serve"]
     healthcheck:
       test: ["CMD", "sh", "-lc", "ollama list >/dev/null 2>&1"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 30
 
