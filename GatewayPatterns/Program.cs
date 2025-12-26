@@ -61,19 +61,21 @@ builder.Services.AddHttpLogging(o => o.LoggingFields = Microsoft.AspNetCore.Http
 builder.Services.AddHttpClient<UsersApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Users"]!))
     .AddHeaderPropagation();
-builder.Services.AddHttpClient<ProgressApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]!))
+builder.Services.AddHttpClient<ProgressApi>(c =>    
+     c.BaseAddress = new Uri(builder.Configuration["Downstream:Progress"]!))        
     .AddHeaderPropagation();
 
 builder.Services.AddHttpClient<OrchApi>(c =>
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]!))
-    .AddHeaderPropagation();
+    { c.BaseAddress = new Uri(builder.Configuration["Downstream:Orch"]!);
+    c.Timeout = TimeSpan.FromMinutes(10);
+    }).AddHeaderPropagation();
+
 builder.Services.AddHttpClient<AuthApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]!))
     .AddHeaderPropagation();
 builder.Services.AddHttpClient<GatewayObjectStorageClient>(c =>
 {
-    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); // "http://object-storage-service:8080/"
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); 
 });
 
 builder.Host.UseSerilog((ctx, lc) =>
@@ -85,7 +87,7 @@ builder.Host.UseSerilog((ctx, lc) =>
       .MinimumLevel.Override("System.Net.Http", LogEventLevel.Warning)
       .Enrich.FromLogContext()
       .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
-}); 
+});
 
 builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddHealthChecks()
