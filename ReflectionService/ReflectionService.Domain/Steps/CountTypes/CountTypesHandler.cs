@@ -51,15 +51,17 @@ public sealed class CountTypesHandler : HandlerTemplateBase<CountTypesArgs>
 
     internal protected override void WriteResult(CheckingContext context, ManifestStep step, TypesResult results)
     {
+        var args = ParseArgs(step.Args) ?? new CountTypesArgs();
+
         var res = results.Types ?? Array.Empty<Type>();
         var count = res.Length;
 
         bool ok;
         string? expectation;
 
-        int? exact = GetIntProp(step, nameof(CountTypesArgs.Exact));
-        int? min = GetIntProp(step, nameof(CountTypesArgs.Min));
-        int? max = GetIntProp(step, nameof(CountTypesArgs.Max));
+        int? exact = args.Exact;
+        int? min = args.Min;
+        int? max = args.Max;
 
         if (exact is not null)
         {
