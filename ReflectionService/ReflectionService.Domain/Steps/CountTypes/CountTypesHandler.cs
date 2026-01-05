@@ -80,20 +80,25 @@ public sealed class CountTypesHandler : HandlerTemplateBase<CountTypesArgs>
             ok = count > 0;
             expectation = "ожидалось наличие по крайней мере одного типа";
         }
+        StepResult stepRes;
 
         if (!ok)
         {
+
             var message = $"Найдено типов: {count}. {expectation}.";
-            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, message));
-            return;
+            stepRes = new(step.Id, step.Operation, false, FailureSeverity.Error, message);
+            
         }
+        else        
+            stepRes = new(step.Id, step.Operation, true);
+        
 
         var output = GetStringProp(step, "OutputRole") ?? GetStringProp(step, "Output");
         if (!string.IsNullOrWhiteSpace(output))
             context.Roles[output!] = new RoleValue(RoleValueKind.Types, res);
 
         context.CachedTypes.AddRange(res);
-        context.StepResults.Add(new(step.Id, step.Operation, true));
+        context.StepResults.Add(stepRes);
     }
 
     private static IEnumerable<Type> GetAllTypesSafe(Assembly asm)

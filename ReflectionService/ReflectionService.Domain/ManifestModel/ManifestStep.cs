@@ -30,5 +30,5 @@ public sealed record ManifestStep
     public StepFailurePolicy OnFail { get; init; } = new(FailureSeverity.Error, "Step failed.");
 
     [JsonPropertyName("stopOnFail")]
-    public bool StopOnFail { get; init; } = false;
+    public bool StopOnFail { get; init; } = true;
 }

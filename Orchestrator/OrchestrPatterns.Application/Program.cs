@@ -50,6 +50,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<CompileFinishedConsumers>();
     x.AddConsumer<CompileFailedConsumer>();
     x.AddConsumer<TestsFinishedConsumer>();
+    x.AddConsumer<TestsFailedConsumer>();
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()

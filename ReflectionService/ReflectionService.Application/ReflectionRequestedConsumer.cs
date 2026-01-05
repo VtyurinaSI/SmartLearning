@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 
-namespace ReflectionService;
+namespace ReflectionService.Application;
 
 public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
 {
@@ -87,14 +87,18 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
                 var asm = alc.LoadFromAssemblyPath(entryAssemblyPath);
 
                 _pipeline.SetPipeline(manifest);
+                _log.LogInformation("Pipeline set: {ops}", string.Join(", ", manifest.Steps.Select(s => $"{s.Id}:{s.Operation}")));
+
                 checkingCtx = _pipeline.ExecutePipeline(asm, manifest.Target);
 
                 var passed = checkingCtx.StepResults.All(r => r.Passed);
 
                 _log.LogInformation(
-                    "Reflection finished. Passed={Passed} Steps={Steps}",
+                    "Reflection finished. Passed={Passed} Steps={Steps}. Stat:\n{st}",
                     passed,
-                    checkingCtx.StepResults.Count);
+                    checkingCtx.StepResults.Count,
+                    checkingCtx.StepResults
+                    );
 
                 if (passed)
                 {
