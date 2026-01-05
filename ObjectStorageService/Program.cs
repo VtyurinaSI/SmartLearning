@@ -3,6 +3,7 @@ using Minio;
 using Minio.ApiEndpoints;
 using Minio.DataModel;
 using Minio.DataModel.Args;
+using System;
 using System.Text;
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -66,8 +67,10 @@ app.MapPost("/objects/{stage}/file", async (
         return Results.BadRequest("Тело запроса пустое – нечего сохранять");
 
     var key = StorageKeys.File(userId, taskId, s, fileName);
+    if (s == CheckStage.Load)
+        await MinioIo.ClearSubmissionAsync(minio, o.Bucket, userId, taskId, ct);
     await MinioIo.PutAsync(minio, o.Bucket, key, bytes, contentType, ct);
-    
+
     return Results.Ok(new { key, bucket = o.Bucket, size = bytes.LongLength, contentType });
 });
 
@@ -206,8 +209,33 @@ sealed class StorageOptions
 
 static class MinioIo
 {
+
+    public static async Task ClearSubmissionAsync(IMinioClient mc, string bucket, Guid userId, long taskId, CancellationToken ct)
+    {
+        var prefix = $"submissions/{userId:D}/{taskId}/";
+
+        var objects = mc.ListObjectsEnumAsync(
+            new ListObjectsArgs()
+                .WithBucket(bucket)
+                .WithPrefix(prefix)
+                .WithRecursive(true),
+            ct);
+
+        await foreach (var obj in objects.WithCancellation(ct))
+        {
+            await mc.RemoveObjectAsync(
+                new RemoveObjectArgs()
+                    .WithBucket(bucket)
+                    .WithObject(obj.Key),
+                ct);
+        }
+
+    }
+
     public static async Task PutAsync(IMinioClient mc, string bucket, string key, byte[] bytes, string contentType, CancellationToken ct)
     {
+
+
         using var ms = new MemoryStream(bytes);
         await mc.PutObjectAsync(new PutObjectArgs()
             .WithBucket(bucket).WithObject(key)
@@ -218,7 +246,7 @@ static class MinioIo
     public static async Task<byte[]?> GetAsync(IMinioClient mc, string bucket, string key, CancellationToken ct)
     {
         byte[]? result = null;
-        
+
         await mc.GetObjectAsync(new GetObjectArgs()
             .WithBucket(bucket)
             .WithObject(key)
@@ -259,5 +287,5 @@ static class MinioIo
 
         return tcs.Task;
     }
-    
+
 }
