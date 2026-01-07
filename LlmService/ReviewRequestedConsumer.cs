@@ -28,6 +28,9 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
     public sealed record Choice(int index, ChatMessage message);
     public sealed record ChatResponse(Choice[] choices);
 
+    // Result object we expect from LLM (JSON)
+    private sealed record ReviewResult(bool passed, string? explanation, double? confidence);
+
     public async Task Consume(ConsumeContext<ReviewRequested> context)
     {
         var msg = context.Message;
@@ -113,19 +116,72 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
 
             var answer = chat?.choices?.FirstOrDefault()?.message?.content ?? string.Empty;
 
+            // Попытка распарсить JSON-ответ от LLM
+            ReviewResult? parsed = null;
+            try
+            {
+                parsed = JsonSerializer.Deserialize<ReviewResult>(answer, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.LogDebug(ex, "Failed to deserialize structured review result for {Cid}", msg.CorrelationId);
+            }
+
+            // Решение на основе parsed.passed или fallback по тексту
+            bool passed;
+            string explanation = answer;
+            double? confidence = null;
+
+            if (parsed is not null)
+            {
+                passed = parsed.passed;
+                explanation = parsed.explanation ?? answer;
+                confidence = parsed.confidence;
+            }
+            else
+            {
+                var lower = answer.ToLowerInvariant();
+                if (lower.Contains("не прой") || lower.Contains("failed") || lower.Contains("не пройден"))
+                    passed = false;
+                else if (lower.Contains("пройден") || lower.Contains("passed") || lower.Contains("успешно"))
+                    passed = true;
+                else
+                    passed = false; // безопасный дефолт
+            }
+
+            // Сформировать итоговый текст для загрузки
+            var finalText = new StringBuilder();
+            finalText.AppendLine($"status: {(passed ? "passed" : "failed")}");
+            if (confidence is not null)
+                finalText.AppendLine($"confidence: {confidence:0.##}");
+            finalText.AppendLine();
+            finalText.AppendLine("explanation:");
+            finalText.AppendLine(explanation);
+            finalText.AppendLine();
+            finalText.AppendLine("raw_llm_response:");
+            finalText.AppendLine(answer);
+
+            var finalBytes = Encoding.UTF8.GetBytes(finalText.ToString());
+
             await UploadStageAsync(
                 storage,
                 userId: msg.UserId,
                 taskId: msg.TaskId,
                 stage: "llm",
                 fileName: "review.txt",
-                bytes: Encoding.UTF8.GetBytes(answer),
+                bytes: finalBytes,
                 mediaType: "text/plain",
                 charset: "utf-8",
                 ct: context.CancellationToken);
 
-
-            await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, answer));
+            // Публикуем событие в зависимости от вердикта LLM
+            if (passed)
+                await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, finalText.ToString()));
+            else
+                await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId, finalText.ToString()));
         }
         catch (Exception ex)
         {
@@ -222,11 +278,20 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
     {
         var sb = new StringBuilder(Math.Min(maxChars, 64_000));
 
+        // Просим вернуть строго JSON-ответ — это упрощает парсинг.
         sb.AppendLine("""
 Ты эксперт по C#.
-Сделай code review присланного решения.
-Фокус: читаемость, структура, архитектурные запахи, явные баги.
-Ответ: кратко, по делу, на русском. Исправленный код не пиши.
+Сделай code review присланного решения. Не будь слишком строгим и прилирчивым. 
+Фокус: соответсвие паттерну "Стратегия".
+
+ОТВЕТ ТОЛЬКО В СТРОГОМ JSON-ФОРМАТЕ (НИЧЕГО БОЛЕЕ):
+{
+  "passed": true | false,               // boolean — вердикт LLM: true = проверка пройдена, false = не пройдена
+  "explanation": "Краткое объяснение решения (на русском)",
+  "confidence": 0.0                     // число от 0 до 1 (необязательно)
+}
+
+Ответ — лаконично, на русском. Не приводить исправленный код, только объяснение и результат.
 """);
 
         sb.AppendLine(projectStructure);

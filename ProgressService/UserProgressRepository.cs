@@ -63,7 +63,7 @@ namespace ProgressService
             }
             else
             {
-                // older schema: no check_result column — return NULL for CheckResult
+                // older schema: no check_result column — derive CheckResult from flags (compile && test && review)
                 sql = """
                 select task_id as TaskId,
                        compile_stat as CompileStat,
@@ -72,7 +72,7 @@ namespace ProgressService
                        test_msg as TestMsg,
                        review_stat as ReviewStat,
                        review_msg as ReviewMsg,
-                       NULL::boolean as CheckResult,
+                       (compile_stat and test_stat and review_stat) as CheckResult,
                        updated_at as UpdatedAt
                 from public.progress
                 where user_id = @UserId
