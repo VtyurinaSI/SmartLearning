@@ -6,5 +6,6 @@
         public string AccessKey { get; set; } = default!;
         public string SecretKey { get; set; } = default!;
         public string Bucket { get; set; } = "smartlearning";
+        public string PatternsBucket { get; set; } = "patterns";
     }
 }

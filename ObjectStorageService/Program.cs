@@ -40,6 +40,7 @@ builder.Services.AddSingleton(log);
 var app = builder.Build();
 
 await EnsureBucketAsync(mc, opts.Bucket);
+await EnsureBucketAsync(mc, opts.PatternsBucket);
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -156,6 +157,31 @@ app.MapGet("/objects/{stage}/file", async (
 .WithOpenApi();
 
 
+app.MapGet("/patterns/file", async (
+    [FromQuery] string key,
+    IMinioClient minio,
+    StorageOptions o,
+    ILogger<Program> log,
+    CancellationToken ct) =>
+{
+    try
+    {
+        var bytes = await MinioIo.GetAsync(minio, o.PatternsBucket, key, ct);
+        return bytes is null
+            ? Results.NotFound()
+            : Results.File(bytes, "application/octet-stream", Path.GetFileName(key));
+    }
+    catch (Exception ex)
+    {
+        log.LogError(ex, "Error reading pattern file");
+        return Results.NotFound();
+    }
+})
+.Produces(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound)
+.WithOpenApi();
+
+
 app.Run();
 
 static bool TryParseStage(string stage, out CheckStage s)
@@ -205,6 +231,7 @@ sealed class StorageOptions
     public string AccessKey { get; set; } = default!;
     public string SecretKey { get; set; } = default!;
     public string Bucket { get; set; } = "smartlearning";
+    public string PatternsBucket { get; set; } = "patterns";
 }
 
 static class MinioIo

@@ -7,6 +7,9 @@ set -e
 : "${MINIO_ROOT_PASSWORD:=minioadmin}"
 : "${MINIO_ALIAS:=local}"
 : "${MINIO_BUCKET:=my-bucket}"
+: "${MINIO_BUCKETS:=$MINIO_BUCKET}"
+: "${MINIO_PATTERNS_BUCKET:=patterns}"
+: "${MINIO_SEED_PATTERNS_DIR:=/seed/patterns}"
 
 mc alias set "$MINIO_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
@@ -17,5 +20,12 @@ until mc ls "$MINIO_ALIAS" >/dev/null 2>&1; do
   sleep 1
 done
 
-mc mb --ignore-existing "$MINIO_ALIAS/$MINIO_BUCKET"
-mc anonymous set download "$MINIO_ALIAS/$MINIO_BUCKET"
+for bucket in $(echo "$MINIO_BUCKETS" | tr ',' ' '); do
+  [ -n "$bucket" ] || continue
+  mc mb --ignore-existing "$MINIO_ALIAS/$bucket"
+  mc anonymous set download "$MINIO_ALIAS/$bucket"
+done
+
+if [ -d "$MINIO_SEED_PATTERNS_DIR" ]; then
+  mc mirror "$MINIO_SEED_PATTERNS_DIR" "$MINIO_ALIAS/$MINIO_PATTERNS_BUCKET"
+fi

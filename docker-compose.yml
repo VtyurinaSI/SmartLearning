@@ -14,6 +14,21 @@ services:
       timeout: 3s
       retries: 40
 
+  patterns-seed:
+    image: postgres:16
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGPASSWORD: 1234
+    volumes:
+      - ./docker/init:/seed:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        createdb -h postgres -U postgres PatternsCatalog 2>/dev/null || true
+        psql -v ON_ERROR_STOP=1 -h postgres -U postgres -d PatternsCatalog -f /seed/21-patterns-catalog-db.psql
+
   rabbitmq:
     image: rabbitmq:3-management
     ports: ["5672:5672","15672:15672"]
@@ -130,9 +145,26 @@ services:
       APP_DLL: ReflectionService.Application.dll
     depends_on:
       object-storage-service: { condition: service_started }
+      pattern-service: { condition: service_started }
       postgres:  { condition: service_healthy }
       rabbitmq:  { condition: service_healthy }
     ports: ["6004:8080"]
+
+  pattern-service:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: runtime
+      args:
+        PROJECT_PATH: PatternService/PatternService.csproj
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      APP_DLL: PatternService.dll
+    depends_on:
+      object-storage-service: { condition: service_started }
+      postgres:  { condition: service_healthy }
+      patterns-seed: { condition: service_completed_successfully }
+    ports: ["6006:8080"]
 
   llm:
     build:
@@ -208,8 +240,11 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_ALIAS: local
       MINIO_BUCKET: smartlearning
+      MINIO_BUCKETS: smartlearning,patterns
+      MINIO_PATTERNS_BUCKET: patterns
     volumes:
       - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
+      - ./docker/seed:/seed:ro
     entrypoint: ["/bin/sh","-c","tr -d '\\r' < /init/30-init-minio.sh > /tmp/init.sh && chmod +x /tmp/init.sh && /tmp/init.sh"]
 
   object-storage-service:

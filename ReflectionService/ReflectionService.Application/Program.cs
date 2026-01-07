@@ -28,6 +28,8 @@ builder.Configuration
 
 builder.Services.AddHttpClient<ReflectionRequestedConsumer>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
+builder.Services.AddHttpClient<PatternServiceClient>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"]!));
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();

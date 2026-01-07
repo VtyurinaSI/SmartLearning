@@ -11,6 +11,7 @@ public sealed record CheckManifest
     public required string Pattern { get; init; }
 
     [JsonPropertyName("version")]
+    [JsonConverter(typeof(FlexibleStringConverter))]
     public required string Version { get; init; }
 
     [JsonPropertyName("target")]

@@ -17,16 +17,19 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
     private readonly ILogger<ReflectionRequestedConsumer> _log;
     private readonly HttpClient _http;
     private readonly CheckingPipeline _pipeline;
+    private readonly PatternServiceClient _patterns;
 
     public ReflectionRequestedConsumer(
         ILogger<ReflectionRequestedConsumer> log,
         HttpClient http,
         CheckingPipeline pipeline,
+        PatternServiceClient patterns,
         ICheckingReportBuilder reporter)
     {
         _log = log;
         _http = http;
         _pipeline = pipeline;
+        _patterns = patterns;
         _reporter = reporter;
     }
     private readonly ICheckingReportBuilder _reporter;
@@ -65,8 +68,15 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
 
             _log.LogInformation("Entry assembly selected: {Assembly}", entryAssemblyPath);
 
+            var manifestJson = await _patterns.GetManifestAsync(
+                context.Message.TaskId,
+                context.CancellationToken);
+
+            if (string.IsNullOrWhiteSpace(manifestJson))
+                throw new InvalidOperationException($"Manifest not found for taskId={context.Message.TaskId}");
+
             var manifest = JsonSerializer.Deserialize<CheckManifest>(
-                StrategyManifestExample.Manifest,
+                manifestJson,
                 JsonOptions.ManifestArgsConverterOptions)
                 ?? throw new InvalidOperationException("Manifest deserialization failed");
 
