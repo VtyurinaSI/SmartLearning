@@ -10,7 +10,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 
-var cs =  builder.Configuration.GetConnectionString("ObjectStorage");
+var cs = builder.Configuration.GetConnectionString("ObjectStorage");
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
@@ -56,19 +56,16 @@ app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepositor
 {
     var story = await repo.GetUserProgressAsync(userId, ct);
 
-    // Completed tasks are those with check_result = true
     ComplitedTasks[] compl = story
         .Where(r => r.CheckResult == true)
         .Select(r => new ComplitedTasks(r.TaskId))
         .OrderBy(c => c.TaskId)
         .ToArray();
 
-    // In-process tasks are those without successful check_result (false or null)
     InProcessTasks[] inp = story
         .Where(r => r.CheckResult != true)
         .Select(r =>
         {
-            // determine next checking stage based on existing stage flags
             if (!r.CompileStat)
             {
                 return new InProcessTasks(r.TaskId, CheckingStage.Compilation.ToString(), r.CompileMsg ?? string.Empty);
@@ -77,7 +74,6 @@ app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepositor
             {
                 return new InProcessTasks(r.TaskId, CheckingStage.Testing.ToString(), r.TestMsg ?? string.Empty);
             }
-            // otherwise go to review
             return new InProcessTasks(r.TaskId, CheckingStage.Review.ToString(), r.ReviewMsg ?? string.Empty);
         })
         .ToArray();
