@@ -16,8 +16,6 @@ namespace AuthService.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            // Конфигурация для RefreshToken
             builder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -34,15 +32,11 @@ namespace AuthService.Data
                 
                 entity.Property(rt => rt.ReplacedByToken)
                     .HasMaxLength(500);
-
-                // Связь с пользователем
                 entity.HasOne(rt => rt.User)
                     .WithMany(u => u.RefreshTokens)
                     .HasForeignKey(rt => rt.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-
-            // Конфигурация для User
             builder.Entity<User>(entity =>
             {
                 entity.Property(u => u.FirstName)

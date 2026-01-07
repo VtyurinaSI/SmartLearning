@@ -159,7 +159,6 @@ api.MapPost("/file", (IFormFile file) =>
     return Results.Ok($"Получили {file.FileName}!");
 })
    .DisableAntiforgery()
-   //.Accepts<IFormFile>("multipart/form-data")
    .Produces(StatusCodes.Status200OK)
    .WithOpenApi();
 
@@ -189,7 +188,7 @@ api.MapPost("/orc/check", async (
 {
     if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
         return Results.Unauthorized();
-    Guid checkingId = new();//await repo.SaveOrigCodeAsync(msg.OrigCode, userId, ct);
+    Guid checkingId = new();
     await using var stream = file.OpenReadStream();
     await minioHandler.WriteFile(stream, file.FileName, userId, taskId, "load", ct);
 

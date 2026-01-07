@@ -24,8 +24,6 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 
-//builder.Configuration.GetConnectionString("ObjectStorage");
-
 builder.Services.AddHttpClient<ReflectionRequestedConsumer>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
 builder.Services.AddHttpClient<PatternServiceClient>(c =>

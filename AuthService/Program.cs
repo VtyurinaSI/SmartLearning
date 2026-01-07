@@ -32,14 +32,9 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
-
-
-// Упрощенная Identity конфигурация
 builder.Services.AddIdentityCore<User>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
-
-// JWT конфигурация
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -53,13 +48,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes("your-test-key-32-chars-long-1234567890"))
         };
     });
-
-// Настройка Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth Service API", Version = "v1" });
-    
-    // Добавляем поддержку JWT в Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -90,8 +81,6 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService.Services.AuthService>();
 
 var app = builder.Build();
-
-// Применение миграций
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -118,15 +107,13 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
-
-// Настройка Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service v1");
-        c.RoutePrefix = "swagger"; // Доступ по /swagger
+        c.RoutePrefix = "swagger";
     });
 }
 

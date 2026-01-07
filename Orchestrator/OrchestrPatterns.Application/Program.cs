@@ -105,7 +105,7 @@ orc.MapPost("/check", async (IBus bus,
     {
         await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, false, false, false, id, false, compilRes, null, null), ct);
         var progressFailCompile = new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
-            false, // CheckResult
+            false,
             false, compilRes,
             false, null,
             false, null);
@@ -120,7 +120,7 @@ orc.MapPost("/check", async (IBus bus,
     {
         await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, false, false, id, false, compilRes, testRes, null), ct);
         return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
-            false, // CheckResult
+            false,
             true, compilRes,
             false, testRes,
             false, null));
@@ -133,13 +133,12 @@ orc.MapPost("/check", async (IBus bus,
     {
         await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, false, id, false, compilRes, testRes, reviewRes), ct);
         return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
-            false, // CheckResult
+            false,
             true, compilRes,
             true, testRes,
             false, reviewRes));
     }
 
-    // try to read stored review as well (already uploaded by review service)
     var minioClient = _http.CreateClient("MinioStorage");
     var url = $"/objects/llm/file?userId={dto.UserId}&taskId={dto.TaskId}&fileName={"review.txt"}";
 
@@ -159,7 +158,7 @@ orc.MapPost("/check", async (IBus bus,
 
     await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true, id, true, compilRes, testRes, reviewRes), ct);
     return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
-        true, // CheckResult
+        true,
         true, compilRes,
         true, testRes,
         true, reviewRes));

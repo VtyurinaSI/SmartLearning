@@ -30,8 +30,6 @@ namespace ProgressService
             return userId;
         }
 
-        // Note: ordering here is TaskId, CompileStat, CompileMsg, TestStat, TestMsg, ReviewStat, ReviewMsg, CheckResult, UpdatedAt
-        // ProgressRow now has nullable CheckResult to be compatible with older schemas
         public record ProgressRow(long TaskId, bool CompileStat, string? CompileMsg, bool TestStat, string? TestMsg, bool ReviewStat, string? ReviewMsg, bool? CheckResult, DateTime UpdatedAt);
 
         public async Task<IReadOnlyList<ProgressRow>> GetUserProgressAsync(Guid userId, CancellationToken ct)
@@ -63,7 +61,6 @@ namespace ProgressService
             }
             else
             {
-                // older schema: no check_result column — derive CheckResult from flags (compile && test && review)
                 sql = """
                 select task_id as TaskId,
                        compile_stat as CompileStat,
@@ -134,7 +131,6 @@ namespace ProgressService
             }
             else
             {
-                // older schema without check_result column — omit it
                 sql = """
                 INSERT INTO public.progress AS p (user_id, task_id, task_name, correlation_id, compile_stat, compile_msg, test_stat, test_msg, review_stat, review_msg, updated_at)
                 VALUES (@UserId, @TaskId, @TaskName, @CorrelationId, @CompileStat, @CompileMsg, @TestStat, @TestMsg, @ReviewStat, @ReviewMsg, now())

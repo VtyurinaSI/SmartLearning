@@ -1,4 +1,3 @@
-//USERSERVICE IMITATION
 using HealthChecks.UI.Client;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;

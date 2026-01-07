@@ -28,7 +28,6 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
     public sealed record Choice(int index, ChatMessage message);
     public sealed record ChatResponse(Choice[] choices);
 
-    // Result object we expect from LLM (JSON)
     private sealed record ReviewResult(bool passed, string? explanation, double? confidence);
 
     public async Task Consume(ConsumeContext<ReviewRequested> context)
@@ -116,7 +115,6 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
 
             var answer = chat?.choices?.FirstOrDefault()?.message?.content ?? string.Empty;
 
-            // Попытка распарсить JSON-ответ от LLM
             ReviewResult? parsed = null;
             try
             {
@@ -130,7 +128,6 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                 _log.LogDebug(ex, "Failed to deserialize structured review result for {Cid}", msg.CorrelationId);
             }
 
-            // Решение на основе parsed.passed или fallback по тексту
             bool passed;
             string explanation = answer;
             double? confidence = null;
@@ -149,10 +146,9 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                 else if (lower.Contains("пройден") || lower.Contains("passed") || lower.Contains("успешно"))
                     passed = true;
                 else
-                    passed = false; // безопасный дефолт
+                    passed = false;
             }
 
-            // Сформировать итоговый текст для загрузки
             var finalText = new StringBuilder();
             finalText.AppendLine($"status: {(passed ? "passed" : "failed")}");
             if (confidence is not null)
@@ -177,7 +173,6 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                 charset: "utf-8",
                 ct: context.CancellationToken);
 
-            // Публикуем событие в зависимости от вердикта LLM
             if (passed)
                 await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, finalText.ToString()));
             else
@@ -278,7 +273,6 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
     {
         var sb = new StringBuilder(Math.Min(maxChars, 64_000));
 
-        // Просим вернуть строго JSON-ответ — это упрощает парсинг.
         sb.AppendLine("""
 Ты эксперт по C#.
 Сделай code review присланного решения. Не будь слишком строгим и прилирчивым. 
