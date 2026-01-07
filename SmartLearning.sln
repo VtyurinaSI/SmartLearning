@@ -49,6 +49,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PatternForCheckingExamples"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrategyPatternExample", "PatternForCheckingExamples\StrategyPatternExample\StrategyPatternExample.csproj", "{619E8049-7B31-314A-E085-74387B64A1BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PatternService", "PatternService\PatternService.csproj", "{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,10 @@ Global
 		{619E8049-7B31-314A-E085-74387B64A1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{619E8049-7B31-314A-E085-74387B64A1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{619E8049-7B31-314A-E085-74387B64A1BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

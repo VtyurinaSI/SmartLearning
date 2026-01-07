@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS public.patterns (
+  pattern_key   text PRIMARY KEY,
+  title         text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.tasks (
+  task_id         bigint PRIMARY KEY,
+  pattern_key     text NOT NULL REFERENCES public.patterns(pattern_key) ON DELETE RESTRICT,
+  title           text NOT NULL,
+  current_version integer NOT NULL DEFAULT 1
+);
+
+INSERT INTO public.patterns(pattern_key, title)
+VALUES ('strategy', 'Strategy')
+ON CONFLICT (pattern_key) DO NOTHING;
+
+INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
+VALUES (1, 'strategy', 'Strategy — basics', 1)
+ON CONFLICT (task_id) DO NOTHING;
