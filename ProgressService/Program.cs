@@ -55,15 +55,33 @@ app.MapGet("/userid/{userLogin}", async (string userLogin, IUserProgressReposito
 app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepository repo, CancellationToken ct) =>
 {
     var story = await repo.GetUserProgressAsync(userId, ct);
-    ComplitedTasks[] compl = story.Where(r => r.CompileStat && r.TestStat && r.ReviewStat).Select(r => new ComplitedTasks(r.TaskId)).ToArray();
+
+    // Completed tasks are those with check_result = true
+    ComplitedTasks[] compl = story
+        .Where(r => r.CheckResult == true)
+        .Select(r => new ComplitedTasks(r.TaskId))
+        .OrderBy(c => c.TaskId)
+        .ToArray();
+
+    // In-process tasks are those without successful check_result (false or null)
     InProcessTasks[] inp = story
-            .Where(r => !r.CompileStat || !r.TestStat || !r.ReviewStat)
-            .Select(r => new InProcessTasks(r.TaskId,
-            (!r.CompileStat
-                    ? CheckingStage.Compilation
-                    : !r.TestStat
-                        ? CheckingStage.Testing
-                        : CheckingStage.Review).ToString())).ToArray();
+        .Where(r => r.CheckResult != true)
+        .Select(r =>
+        {
+            // determine next checking stage based on existing stage flags
+            if (!r.CompileStat)
+            {
+                return new InProcessTasks(r.TaskId, CheckingStage.Compilation.ToString(), r.CompileMsg ?? string.Empty);
+            }
+            if (!r.TestStat)
+            {
+                return new InProcessTasks(r.TaskId, CheckingStage.Testing.ToString(), r.TestMsg ?? string.Empty);
+            }
+            // otherwise go to review
+            return new InProcessTasks(r.TaskId, CheckingStage.Review.ToString(), r.ReviewMsg ?? string.Empty);
+        })
+        .ToArray();
+
     long next = 1;
     for (int i = 0; i < compl.Length; i++)
     {
@@ -77,7 +95,7 @@ app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepositor
 app.Run();
 public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks, long NextTask);
 public record ComplitedTasks(long TaskId);
-public record InProcessTasks(long TaskId, string NextCheckingStage);
+public record InProcessTasks(long TaskId, string NextCheckingStage, string Comment);
 public enum CheckingStage
 {
     Compilation,
