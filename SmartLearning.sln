@@ -19,8 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLearning.Contracts", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinIoStub", "MinIoStub\MinIoStub.csproj", "{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerSevice", "CompilerSevice\CompilerSevice.csproj", "{06907A6D-F5B1-48BD-9798-9F5F5194B97D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProgressService", "ProgressService\ProgressService.csproj", "{78580638-1A2C-48C5-B393-EEFCD3981E00}"
@@ -85,10 +83,6 @@ Global
 		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5159496-AC62-C0E9-688D-3CF8D518967E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A683B0BF-F25D-444D-AF07-824BBE6FE7E4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06907A6D-F5B1-48BD-9798-9F5F5194B97D}.Release|Any CPU.ActiveCfg = Release|Any CPU

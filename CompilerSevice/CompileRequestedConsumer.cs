@@ -107,13 +107,32 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
                 swBuild.ElapsedMilliseconds,
                 build.ExitCode);
 
+            var buildLog = build.StdOut + "\n" + build.StdErr;
+
             if (build.ExitCode != 0)
-                throw new InvalidOperationException($"dotnet build failed: {Trim(build.StdErr, 4000)}");
+            {
+                _log.LogError("Build failed: {err}", Trim(build.StdErr, 4000));
+
+                await context.Publish(new CompilationFailed(
+                    msg.CorrelationId,
+                    msg.UserId,
+                    msg.TaskId,
+                    Trim(buildLog, 20000)));
+                return;
+            }
 
             var files = Directory.GetFiles(outDir, "*", SearchOption.AllDirectories);
 
             if (files.Length == 0)
-                throw new InvalidOperationException("Build produced no output files");
+            {
+                _log.LogError("Build produced no output files");
+                await context.Publish(new CompilationFailed(
+                    msg.CorrelationId,
+                    msg.UserId,
+                    msg.TaskId,
+                    "Build produced no output files"));
+                return;
+            }
 
             using var gate = new SemaphoreSlim(4);
 
@@ -145,7 +164,8 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
             await context.Publish(new CompilationFinished(
                 msg.CorrelationId,
                 msg.UserId,
-                msg.TaskId));
+                msg.TaskId,
+                Trim(buildLog, 20000)));
         }
         catch (Exception ex)
         {
@@ -154,7 +174,8 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
             await context.Publish(new CompilationFailed(
                 msg.CorrelationId,
                 msg.UserId,
-                msg.TaskId));
+                msg.TaskId,
+                ex.ToString()));
         }
         finally
         {

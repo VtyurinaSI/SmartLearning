@@ -1,5 +1,4 @@
 ﻿using MassTransit;
-using MinIoStub;
 using SmartLearning.Contracts;
 using SmartLearning.FilesUtils;
 using System.Net;
@@ -13,15 +12,12 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
 {
     private readonly IHttpClientFactory _http;
     private readonly ILogger<ReviewRequestedConsumer> _log;
-    private readonly IObjectStorageRepository _repo;
 
     public ReviewRequestedConsumer(
         IHttpClientFactory http,
-        IObjectStorageRepository repo,
         ILogger<ReviewRequestedConsumer> log)
     {
         _http = http;
-        _repo = repo;
         _log = log;
     }
 
@@ -107,7 +103,7 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                     msg.CorrelationId,
                     respBody);
 
-                await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId));
+                await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId, respBody));
                 return;
             }
 
@@ -128,14 +124,13 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                 charset: "utf-8",
                 ct: context.CancellationToken);
 
-            await _repo.SaveReviewAsync(msg.CorrelationId, answer, context.CancellationToken);
 
-            await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId));
+            await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, answer));
         }
         catch (Exception ex)
         {
             _log.LogError(ex, "Review failed for {Cid}", msg.CorrelationId);
-            await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId));
+            await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId, ex.ToString()));
         }
         finally
         {

@@ -6,8 +6,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using MinIoStub;
-using Npgsql;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -23,8 +21,6 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 var cs = builder.Configuration.GetConnectionString("ObjectStorage");
 
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -89,7 +85,6 @@ builder.Host.UseSerilog((ctx, lc) =>
       .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
 });
 
-builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck("gateway_self", () => HealthCheckResult.Healthy("OK"))
     .AddUrlGroup(new Uri($"{builder.Configuration["Downstream:Users"]}health/ready"), name: "users_svc")
@@ -188,7 +183,6 @@ api.MapPost("/orc/check", async (
     IFormFile file,
     HttpContext ctx,
     ProgressApi pr,
-    IObjectStorageRepository repo,
     OrchApi orc,
     GatewayObjectStorageClient minioHandler,
     CancellationToken ct) =>

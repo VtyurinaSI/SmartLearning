@@ -1,7 +1,5 @@
 using LlmService;
 using MassTransit;
-using MinIoStub;
-using Npgsql;
 using System.Data;
 using System.Net.Http.Headers;
 
@@ -12,8 +10,6 @@ builder.Configuration
 
 var cs = builder.Configuration.GetConnectionString("DefaultConnection")
          ?? builder.Configuration.GetConnectionString("ObjectStorage");
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -29,7 +25,6 @@ builder.Services.AddHttpClient("Ollama", client =>
 });
 builder.Services.AddHttpClient("MinioStorage",c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
-builder.Services.AddObjectStorage(builder.Configuration);
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();

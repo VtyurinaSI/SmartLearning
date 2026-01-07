@@ -10,7 +10,7 @@ namespace OrchestrPatterns.Application.Consumers
 
         public Task Consume(ConsumeContext<TestsFailed> ctx)
         {
-            _hub.SetCompleted(ctx.Message.CorrelationId, false);
+            _hub.SetCompleted(ctx.Message.CorrelationId, false, ctx.Message.Result);
             return Task.CompletedTask;
         }
     }

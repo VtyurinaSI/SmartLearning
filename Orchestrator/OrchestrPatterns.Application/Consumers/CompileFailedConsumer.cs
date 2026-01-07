@@ -9,6 +9,6 @@ namespace OrchestrPatterns.Application.Consumers
         public CompileFailedConsumer(CompletionHub hub) => _hub = hub;
 
         public Task Consume(ConsumeContext<CompilationFailed> ctx)
-        { _hub.SetCompleted(ctx.Message.CorrelationId, false); return Task.CompletedTask; }
+        { _hub.SetCompleted(ctx.Message.CorrelationId, false, ctx.Message.Result); return Task.CompletedTask; }
     }
 }

@@ -8,6 +8,6 @@ namespace OrchestrPatterns.Application.Consumers
         private readonly CompletionHub _hub;
         public CompileFinishedConsumers(CompletionHub hub) => _hub = hub;
         public Task Consume(ConsumeContext<CompilationFinished> ctx)
-        { _hub.SetCompleted(ctx.Message.CorrelationId, true); return Task.CompletedTask; }
+        { _hub.SetCompleted(ctx.Message.CorrelationId, true, ctx.Message.Result); return Task.CompletedTask; }
     }
 }

@@ -9,15 +9,28 @@ CREATE TABLE IF NOT EXISTS public.users (
   user_prog_lang  text
 );
 
-
 CREATE TABLE IF NOT EXISTS public.progress (
-  user_id    uuid   NOT NULL,
-  task_id    bigint NOT NULL,
-  task_name  text,
-  compile    boolean NOT NULL DEFAULT false,
-  test       boolean NOT NULL DEFAULT false,
-  review     boolean NOT NULL DEFAULT false,
+  user_id        uuid    NOT NULL,
+  task_id        bigint  NOT NULL,
+  task_name      text,
+
+  correlation_id uuid    NULL,
+
+  compile_stat   boolean NOT NULL DEFAULT false,
+  test_stat      boolean NOT NULL DEFAULT false,
+  review_stat    boolean NOT NULL DEFAULT false,
+
+  compile_msg    text,
+  test_msg       text,
+  review_msg     text,
+
+  updated_at     timestamptz NOT NULL DEFAULT now(),
+
   CONSTRAINT progress_pk PRIMARY KEY (user_id, task_id),
   CONSTRAINT progress_user_fk
-    FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id)
+    REFERENCES public.users(user_id)
+    ON DELETE CASCADE
 );
+
+

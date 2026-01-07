@@ -100,27 +100,33 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
                     checkingCtx.StepResults
                     );
 
+                string report = _reporter.Build(checkingCtx);
+
                 if (passed)
                 {
                     await context.Publish(new TestsFinished(
                         context.Message.CorrelationId,
                         context.Message.UserId,
-                        context.Message.TaskId));
+                        context.Message.TaskId,
+                        report));
                 }
                 else
                 {
                     await context.Publish(new TestsFailed(
                         context.Message.CorrelationId,
                         context.Message.UserId,
-                        context.Message.TaskId));
+                        context.Message.TaskId,
+                        report));
                 }
             }
             catch (Exception ex)
             {
+                string rep = checkingCtx != null ? _reporter.Build(checkingCtx) : ex.ToString();
                 await context.Publish(new TestsFailed(
                                        context.Message.CorrelationId,
                                        context.Message.UserId,
-                                       context.Message.TaskId));
+                                       context.Message.TaskId,
+                                       rep));
                 _log.LogError("Ошибка! \n{e}", ex);
             }
             finally
@@ -143,7 +149,8 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
             await context.Publish(new TestsFailed(
                 context.Message.CorrelationId,
                 context.Message.UserId,
-                context.Message.TaskId));
+                context.Message.TaskId,
+                ex.ToString()));
         }
         finally
         {

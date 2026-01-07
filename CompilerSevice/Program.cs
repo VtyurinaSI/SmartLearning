@@ -1,7 +1,5 @@
 using CompilerSevice;
 using MassTransit;
-using MinIoStub;
-using Npgsql;
 using System.Data;
 
 
@@ -10,13 +8,10 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 var cs = builder.Configuration.GetConnectionString("ObjectStorage");
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddObjectStorage(builder.Configuration);
 
 builder.Services.AddHttpClient<CompileRequestedConsumer>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));

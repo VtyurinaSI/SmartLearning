@@ -1,8 +1,6 @@
 using HealthChecks.UI.Client;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using MinIoStub;
-using Npgsql;
 using OrchestrPatterns.Application;
 using OrchestrPatterns.Application.Consumers;
 using OrchestrPatterns.Domain;
@@ -32,8 +30,6 @@ var cs = builder.Configuration.GetConnectionString("ConnectionStrings")
 builder.Services.AddHttpClient("MinioStorage", c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
 
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 builder.Services.AddHealthChecks();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -41,7 +37,6 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<CompletionHub>();
 
-builder.Services.AddObjectStorage(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
@@ -93,7 +88,6 @@ var orc = app.MapGroup("/orc");
 
 orc.MapPost("/check", async (IBus bus,
                           CompletionHub hub,
-                          IObjectStorageRepository repo,
                           StartChecking dto,
                           IHttpClientFactory _http,
                           ILogger<Program> log,
@@ -104,36 +98,71 @@ orc.MapPost("/check", async (IBus bus,
 
     await bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
 
-    var ok = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    var (okCompile, compilRes) = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
     await Task.Delay(200, ct);
-    var compilRes = await repo.ReadCompilationAsync(id, ct);
 
-    if (!ok)
+    if (!okCompile)
     {
-        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, false, false, false), ct);
-        return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
+        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, false, false, false, id, false, compilRes, null, null), ct);
+        var progressFailCompile = new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
+            false, // CheckResult
+            false, compilRes,
+            false, null,
+            false, null);
+        return Results.Ok(progressFailCompile);
     }
 
     await bus.Publish(new TestRequested(id, dto.UserId, dto.TaskId), ct);
 
-    var okReflection = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
+    var (okReflection, testRes) = await hub.WaitAsync(id, TimeSpan.FromMinutes(2), ct);
 
     if (!okReflection)
-        return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, null, null));
+    {
+        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, false, false, id, false, compilRes, testRes, null), ct);
+        return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
+            false, // CheckResult
+            true, compilRes,
+            false, testRes,
+            false, null));
+    }
 
     await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
-    await hub.WaitAsync(id, TimeSpan.FromMinutes(10), ct);
+    var (okReview, reviewRes) = await hub.WaitAsync(id, TimeSpan.FromMinutes(10), ct);
+
+    if (!okReview)
+    {
+        await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, false, id, false, compilRes, testRes, reviewRes), ct);
+        return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
+            false, // CheckResult
+            true, compilRes,
+            true, testRes,
+            false, reviewRes));
+    }
+
+    // try to read stored review as well (already uploaded by review service)
     var minioClient = _http.CreateClient("MinioStorage");
     var url = $"/objects/llm/file?userId={dto.UserId}&taskId={dto.TaskId}&fileName={"review.txt"}";
 
-    using var respMinio = await minioClient.GetAsync(url);
+    try
+    {
+        using var respMinio = await minioClient.GetAsync(url, ct);
+        if (respMinio.IsSuccessStatusCode)
+        {
+            var bytes = await respMinio.Content.ReadAsByteArrayAsync(ct);
+            reviewRes = Encoding.UTF8.GetString(bytes);
+        }
+    }
+    catch (Exception ex)
+    {
+        log.LogDebug(ex, "Failed to read review from storage for {Cid}", id);
+    }
 
-    respMinio.EnsureSuccessStatusCode();
-
-    var bytes = await respMinio.Content.ReadAsByteArrayAsync();
-    var reviewRes = Encoding.UTF8.GetString(bytes);
-    await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true), ct);
-    return Results.Ok(new CheckingResults(dto.UserId, id, compilRes, "ok", reviewRes));
+    await bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, true, true, true, id, true, compilRes, testRes, reviewRes), ct);
+    return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, "task " + dto.TaskId.ToString(), id,
+        true, // CheckResult
+        true, compilRes,
+        true, testRes,
+        true, reviewRes));
 });
 
 app.Run();

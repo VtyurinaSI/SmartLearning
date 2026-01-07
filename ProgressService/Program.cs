@@ -55,13 +55,13 @@ app.MapGet("/userid/{userLogin}", async (string userLogin, IUserProgressReposito
 app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepository repo, CancellationToken ct) =>
 {
     var story = await repo.GetUserProgressAsync(userId, ct);
-    ComplitedTasks[] compl = story.Where(r => r.Compile && r.Test && r.Review).Select(r => new ComplitedTasks(r.TaskId)).ToArray();
+    ComplitedTasks[] compl = story.Where(r => r.CompileStat && r.TestStat && r.ReviewStat).Select(r => new ComplitedTasks(r.TaskId)).ToArray();
     InProcessTasks[] inp = story
-            .Where(r => !r.Compile || !r.Test || !r.Review)
+            .Where(r => !r.CompileStat || !r.TestStat || !r.ReviewStat)
             .Select(r => new InProcessTasks(r.TaskId,
-            (!r.Compile
+            (!r.CompileStat
                     ? CheckingStage.Compilation
-                    : !r.Test
+                    : !r.TestStat
                         ? CheckingStage.Testing
                         : CheckingStage.Review).ToString())).ToArray();
     long next = 1;
