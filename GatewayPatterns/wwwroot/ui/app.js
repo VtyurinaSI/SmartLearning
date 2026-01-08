@@ -38,7 +38,6 @@ function stageFrom(x){
 function renderProgress(res){
   const complRaw = res?.complitedTasks ?? res?.completedTasks ?? res?.CompletedTasks ?? [];
   const inprocRaw = res?.inProcessTasks ?? res?.InProcessTasks ?? res?.inprogressTasks ?? [];
-  const next = res?.nextTask ?? res?.NextTask ?? "—";
   const complIds = Array.isArray(complRaw) ? complRaw.map(idFrom).filter(v=>v!=null) : [];
   const lines = [];
   lines.push(`Завершены задачи: ${complIds.length ? complIds.join(", ") : "—"}.`);
@@ -52,7 +51,6 @@ function renderProgress(res){
   } else {
     lines.push("—");
   }
-  lines.push(`Следующая актуальная задача для выполнения: ${next}.`);
   return lines.join("\n");
 }
 // ---- compilation/test/review parsing ----
