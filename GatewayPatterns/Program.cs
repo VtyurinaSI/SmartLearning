@@ -196,15 +196,6 @@ api.MapGet("/users/me", async (UsersApi users, CancellationToken ct) =>
 
 
 
-api.MapGet("/users/{id:guid}", async (Guid id, UsersApi users, CancellationToken ct) =>
-{
-    using var resp = await users.GetUserAsync(id, ct);
-    return await Proxy(resp, ct);
-})
-    .RequireAuthorization()
-    .WithSummary("Get user profile");
-
-
 
 api.MapPost("/orc/check", async (
     [FromQuery] long taskId,
