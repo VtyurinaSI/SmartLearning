@@ -1,4 +1,5 @@
 ﻿using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
 using OrchestrPatterns.Domain;
 using SmartLearning.Contracts;
 
@@ -151,10 +152,17 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
         );
 
         WhenEnter(Reviewing, x => x
-    .ThenAsync(ctx => ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId)))
-    .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId))
-);
-
+            .ThenAsync(async ctx =>
+            {
+                var provider = ctx.GetPayload<IServiceProvider>();
+                var patterns = provider.GetRequiredService<PatternServiceClient>();
+                var patternName = await patterns.GetPatternTitleAsync(ctx.Saga.TaskId, ctx.CancellationToken);
+                if (string.IsNullOrWhiteSpace(patternName))
+                    patternName = string.Empty;
+                await ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId, patternName));
+            })
+            .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId))
+        );
         During(Reviewing,
             Ignore(StartReviewEvent),
             When(ReviewFinishedEvent)

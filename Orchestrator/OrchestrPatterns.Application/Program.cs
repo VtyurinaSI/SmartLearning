@@ -29,6 +29,8 @@ var cs = builder.Configuration.GetConnectionString("ConnectionStrings")
 
 builder.Services.AddHttpClient("MinioStorage", c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!));
+builder.Services.AddHttpClient<PatternServiceClient>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"]!));
 
 builder.Services.AddHealthChecks();
 
@@ -90,6 +92,7 @@ orc.MapPost("/check", async (IBus bus,
                           CompletionHub hub,
                           StartChecking dto,
                           IHttpClientFactory _http,
+                          PatternServiceClient patterns,
                           ILogger<Program> log,
                           CancellationToken ct) =>
 {
@@ -126,7 +129,10 @@ orc.MapPost("/check", async (IBus bus,
             false, null));
     }
 
-    await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId), ct);
+    var patternName = await patterns.GetPatternTitleAsync(dto.TaskId, ct);
+    if (string.IsNullOrWhiteSpace(patternName))
+        patternName = string.Empty;
+    await bus.Publish(new ReviewRequested(id, dto.UserId, dto.TaskId, patternName), ct);
     var (okReview, reviewRes) = await hub.WaitAsync(id, TimeSpan.FromMinutes(10), ct);
 
     if (!okReview)

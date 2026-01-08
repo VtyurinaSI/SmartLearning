@@ -16,7 +16,7 @@
     public record StartReview(Guid CorrelationId, Guid UserId, long TaskId);
     public record Cancel(Guid CorrelationId, Guid UserId, long TaskId);
 
-    public record ReviewRequested(Guid CorrelationId, Guid UserId, long TaskId);
+    public record ReviewRequested(Guid CorrelationId, Guid UserId, long TaskId, string PatternName);
     public record CompileRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record TestRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId, string? Result);

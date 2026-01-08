@@ -79,10 +79,12 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
 
             var projectStructure = BuildProjectStructure(workDir, files);
 
+            var patternName = string.IsNullOrWhiteSpace(msg.PatternName) ? "неизвестный" : msg.PatternName.Trim();
             var prompt = BuildPrompt(
                 rootDir: workDir,
                 files: files,
                 projectStructure: projectStructure,
+                patternName: patternName,
                 maxChars: GetEnvInt("LLM_PROMPT_MAX_CHARS", 120_000),
                 perFileMaxChars: GetEnvInt("LLM_PROMPT_PER_FILE_MAX_CHARS", 20_000));
 
@@ -268,6 +270,7 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
         string rootDir,
         IReadOnlyList<string> files,
         string projectStructure,
+        string patternName,
         int maxChars,
         int perFileMaxChars)
     {
@@ -276,7 +279,9 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
         sb.AppendLine("""
 Ты эксперт по C#.
 Сделай code review присланного решения. Не будь слишком строгим и прилирчивым. 
-Фокус: соответсвие паттерну "Стратегия".
+""");
+        sb.AppendLine($"Фокус: соответсвие паттерну \"{patternName}\".");
+        sb.AppendLine("""
 
 ОТВЕТ ТОЛЬКО В СТРОГОМ JSON-ФОРМАТЕ (НИЧЕГО БОЛЕЕ):
 {
