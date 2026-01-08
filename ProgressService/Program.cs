@@ -1,8 +1,4 @@
-using MassTransit;
-using Npgsql;
-using ProgressService;
-using System.Data;
-using System.Linq;
+﻿using ProgressService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,84 +6,18 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 
-var cs = builder.Configuration.GetConnectionString("ObjectStorage");
-
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
-
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen();
+builder.Services.AddProgressServiceOptions(builder.Configuration);
+builder.Services.AddProgressServiceSwagger();
 builder.Services.AddUserProgressDb(builder.Configuration);
-builder.Services.AddMassTransit(x =>
-{
-    x.SetKebabCaseEndpointNameFormatter();
+builder.Services.AddProgressServiceCore();
+builder.Services.AddProgressServiceMessaging(builder.Configuration);
 
-    x.AddConsumer<UpdateProgressConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var mq = builder.Configuration.GetSection("RabbitMq");
-        cfg.Host(mq["Host"] ?? "rabbitmq", mq["VirtualHost"] ?? "/", h =>
-        {
-            h.Username(mq["UserName"] ?? "guest");
-            h.Password(mq["Password"] ?? "guest");
-        }); ;
-
-        cfg.ConfigureEndpoints(context);
-    });
-});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.MapGet("/", () => Results.Redirect("/swagger"));
+    app.UseProgressServiceSwagger();
 }
 
-app.MapGet("/userid/{userLogin}", async (string userLogin, IUserProgressRepository repo, CancellationToken ct) =>
-{
-    var userId = await repo.GetUserIdAsync(userLogin, ct);
-    return userId is null ? Results.NotFound() : Results.Text(userId.ToString());
-});
-
-app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepository repo, CancellationToken ct) =>
-{
-    var story = await repo.GetUserProgressAsync(userId, ct);
-
-    ComplitedTasks[] compl = story
-        .Where(r => r.CheckResult == true)
-        .Select(r => new ComplitedTasks(r.TaskId))
-        .OrderBy(c => c.TaskId)
-        .ToArray();
-
-    InProcessTasks[] inp = story
-        .Where(r => r.CheckResult != true)
-        .Select(r =>
-        {
-            if (!r.CompileStat)
-            {
-                return new InProcessTasks(r.TaskId, CheckingStage.Compilation.ToString(), r.CompileMsg ?? string.Empty);
-            }
-            if (!r.TestStat)
-            {
-                return new InProcessTasks(r.TaskId, CheckingStage.Testing.ToString(), r.TestMsg ?? string.Empty);
-            }
-            return new InProcessTasks(r.TaskId, CheckingStage.Review.ToString(), r.ReviewMsg ?? string.Empty);
-        })
-        .ToArray();
-
-    UserProgress prog = new(compl, inp);
-    return Results.Json(prog);
-});
+app.MapProgressServiceEndpoints();
 app.Run();
-public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks);
-public record ComplitedTasks(long TaskId);
-public record InProcessTasks(long TaskId, string NextCheckingStage, string Comment);
-public enum CheckingStage
-{
-    Compilation,
-    Testing,
-    Review
-}

@@ -5,21 +5,16 @@ namespace UserService
 {
     public class UserCreatedConsumer : IConsumer<UserCreated>
     {
-        private readonly ILogger<UserCreatedConsumer> _log;
-        private readonly IUserProgressRepository _repo;
+        private readonly UserCreatedHandler _handler;
 
-        public UserCreatedConsumer(IUserProgressRepository repo, ILogger<UserCreatedConsumer> log)
+        public UserCreatedConsumer(UserCreatedHandler handler)
         {
-            _repo = repo;
-            _log = log;
+            _handler = handler;
         }
-        public async Task Consume(ConsumeContext<UserCreated> context)
+
+        public Task Consume(ConsumeContext<UserCreated> context)
         {
-            await _repo.CreateUserAsync(context.Message, context.CancellationToken);
-            _log.LogInformation("User created: {UserId}, {UserName}",
-                context.Message.UserId,
-                context.Message.Login
-            );
+            return _handler.HandleAsync(context.Message, context.CancellationToken);
         }
     }
 }

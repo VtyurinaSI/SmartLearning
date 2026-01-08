@@ -7,4 +7,5 @@ public sealed class CatalogOptions
     public string TheoryFileName { get; init; } = "theory.md";
     public string TaskFileName { get; init; } = "task.md";
     public string ManifestFileName { get; init; } = "manifest.json";
+    public int SnippetLength { get; init; } = 100;
 }

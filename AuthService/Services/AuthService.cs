@@ -1,33 +1,25 @@
-using AuthService.Data;
-using AuthService.DTOs;
+﻿using AuthService.DTOs;
 using AuthService.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using SmartLearning.Contracts;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace AuthService.Services
 {
     public class AuthService : IAuthService
     {
         private readonly UserManager<User> _userManager;
-        private readonly AppDbContext _context;
-        private readonly IConfiguration _configuration;
         private readonly IPublishEndpoint _publish;
+        private readonly IJwtTokenService _tokenService;
+
         public AuthService(
             UserManager<User> userManager,
-            AppDbContext context,
-            IConfiguration configuration,
-            IPublishEndpoint publish)
+            IPublishEndpoint publish,
+            IJwtTokenService tokenService)
         {
             _userManager = userManager;
-            _context = context;
-            _configuration = configuration;
             _publish = publish;
-
+            _tokenService = tokenService;
         }
 
         public async Task<string> RegisterAsync(RegisterRequest request)
@@ -48,7 +40,7 @@ namespace AuthService.Services
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
             await _publish.Publish(new UserCreated(Guid.Parse(user.Id), user.UserName!, user.Email!), default);
-            return await GenerateJwtToken(user);
+            return _tokenService.GenerateToken(user);
         }
 
         public async Task<string> LoginAsync(string email, string password)
@@ -60,30 +52,7 @@ namespace AuthService.Services
                 throw new Exception("Invalid credentials");
             }
 
-            return await GenerateJwtToken(user);
-        }
-
-        private async Task<string> GenerateJwtToken(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new(JwtRegisteredClaimNames.Sub, user.Id),
-                new(JwtRegisteredClaimNames.Email, user.Email),
-                new("firstName", user.FirstName),
-                new("lastName", user.LastName)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryInMinutes"])),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return _tokenService.GenerateToken(user);
         }
     }
 }

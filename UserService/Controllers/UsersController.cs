@@ -1,6 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UserService
@@ -9,24 +7,22 @@ namespace UserService
     [Route("api/users")]
     public class UsersController : ControllerBase
     {
-        private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "user",
-            "admin"
-        };
-
         private readonly IUserProgressRepository _repo;
+        private readonly IUserContext _userContext;
+        private readonly IUserRoleService _roleService;
 
-        public UsersController(IUserProgressRepository repo)
+        public UsersController(IUserProgressRepository repo, IUserContext userContext, IUserRoleService roleService)
         {
             _repo = repo;
+            _userContext = userContext;
+            _roleService = roleService;
         }
 
         [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserProfile>> GetMe(CancellationToken ct)
         {
-            if (!TryGetUserId(out var userId))
+            if (!_userContext.TryGetUserId(User, out var userId))
             {
                 return Unauthorized();
             }
@@ -44,7 +40,7 @@ namespace UserService
         [Authorize]
         public async Task<ActionResult<UserProfile>> UpdateMe([FromBody] UpdateProfileRequest request, CancellationToken ct)
         {
-            if (!TryGetUserId(out var userId))
+            if (!_userContext.TryGetUserId(User, out var userId))
             {
                 return Unauthorized();
             }
@@ -73,12 +69,12 @@ namespace UserService
         [Authorize]
         public async Task<ActionResult<UserProfile>> GetUser(Guid id, CancellationToken ct)
         {
-            if (!TryGetUserId(out var callerId))
+            if (!_userContext.TryGetUserId(User, out var callerId))
             {
                 return Unauthorized();
             }
 
-            if (callerId != id && !await IsAdminAsync(callerId, ct))
+            if (callerId != id && !await _roleService.IsAdminAsync(callerId, ct))
             {
                 return Forbid();
             }
@@ -96,18 +92,17 @@ namespace UserService
         [Authorize]
         public async Task<IActionResult> SetRole(Guid id, [FromBody] SetUserRoleRequest request, CancellationToken ct)
         {
-            if (!TryGetUserId(out var callerId))
+            if (!_userContext.TryGetUserId(User, out var callerId))
             {
                 return Unauthorized();
             }
 
-            if (!await IsAdminAsync(callerId, ct))
+            if (!await _roleService.IsAdminAsync(callerId, ct))
             {
                 return Forbid();
             }
 
-            var role = request?.Role?.Trim();
-            if (string.IsNullOrWhiteSpace(role) || !AllowedRoles.Contains(role))
+            if (!_roleService.TryNormalizeRole(request?.Role, out var normalizedRole))
             {
                 return BadRequest(new { message = "Role must be 'user' or 'admin'." });
             }
@@ -118,23 +113,8 @@ namespace UserService
                 return NotFound();
             }
 
-            await _repo.SetUserRoleAsync(id, role.ToLowerInvariant(), ct);
+            await _repo.SetUserRoleAsync(id, normalizedRole, ct);
             return NoContent();
-        }
-
-        private bool TryGetUserId(out Guid userId)
-        {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                      ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                      ?? User.FindFirstValue("sub");
-
-            return Guid.TryParse(sub, out userId);
-        }
-
-        private async Task<bool> IsAdminAsync(Guid userId, CancellationToken ct)
-        {
-            var role = await _repo.GetUserRoleAsync(userId, ct);
-            return string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -14,7 +14,7 @@ public sealed class PatternServiceClient
         _log = log;
     }
 
-    private sealed record TaskMeta(string PatternTitle);
+    private sealed record TaskMeta(string TaskTitle, string PatternTitle);
 
     public async Task<bool?> TaskExistsAsync(long taskId, CancellationToken ct)
     {
@@ -51,6 +51,32 @@ public sealed class PatternServiceClient
         {
             var meta = await resp.Content.ReadFromJsonAsync<TaskMeta>(cancellationToken: ct);
             return meta?.PatternTitle;
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "PatternService meta parsing failed for task {TaskId}", taskId);
+            return null;
+        }
+    }
+
+    public async Task<string?> GetTaskTitleAsync(long taskId, CancellationToken ct)
+    {
+        var url = $"/meta?taskId={taskId}";
+        using var resp = await _http.GetAsync(url, ct);
+
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            _log.LogWarning("PatternService meta request failed: {StatusCode}", resp.StatusCode);
+            return null;
+        }
+
+        try
+        {
+            var meta = await resp.Content.ReadFromJsonAsync<TaskMeta>(cancellationToken: ct);
+            return meta?.TaskTitle;
         }
         catch (Exception ex)
         {

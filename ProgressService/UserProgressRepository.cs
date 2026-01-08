@@ -1,11 +1,15 @@
 ﻿using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using System.Data;
 
 namespace ProgressService
 {
     public class UserProgressRepository : IUserProgressRepository
     {
+        private const string HasCheckResultSql =
+            "select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'progress' and column_name = 'check_result'";
+
         private readonly NpgsqlDataSource _ds;
         private readonly ILogger<UserProgressRepository> _log;
 
@@ -30,22 +34,20 @@ namespace ProgressService
             return userId;
         }
 
-        public record ProgressRow(long TaskId, bool CompileStat, string? CompileMsg, bool TestStat, string? TestMsg, bool ReviewStat, string? ReviewMsg, bool? CheckResult, DateTime UpdatedAt);
+        public record ProgressRow(long TaskId, string? TaskName, bool CompileStat, string? CompileMsg, bool TestStat, string? TestMsg, bool ReviewStat, string? ReviewMsg, bool? CheckResult, DateTime UpdatedAt);
 
         public async Task<IReadOnlyList<ProgressRow>> GetUserProgressAsync(Guid userId, CancellationToken ct)
         {
             await using var conn = await _ds.OpenConnectionAsync(ct);
 
-            var hasCheckResult = await conn.QuerySingleAsync<int>(
-                new CommandDefinition(
-                    "select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'progress' and column_name = 'check_result'",
-                    cancellationToken: ct));
+            var hasCheckResult = await HasCheckResultColumnAsync(conn, ct);
 
             string sql;
-            if (hasCheckResult > 0)
+            if (hasCheckResult)
             {
                 sql = """
                 select task_id as TaskId,
+                       task_name as TaskName,
                        compile_stat as CompileStat,
                        compile_msg as CompileMsg,
                        test_stat as TestStat,
@@ -63,6 +65,7 @@ namespace ProgressService
             {
                 sql = """
                 select task_id as TaskId,
+                       task_name as TaskName,
                        compile_stat as CompileStat,
                        compile_msg as CompileMsg,
                        test_stat as TestStat,
@@ -82,23 +85,22 @@ namespace ProgressService
             return rows.AsList();
         }
 
-        public async Task SaveCheckingAsync(Guid userId, long taskId, bool isCompiledSuccess, bool isTestedSuccess, bool isReviewedSuccess, Guid? correlationId, bool checkResult, string? compileMsg, string? testMsg, string? reviewMsg, CancellationToken ct)
+        public async Task SaveCheckingAsync(Guid userId, long taskId, string taskName, bool isCompiledSuccess, bool isTestedSuccess, bool isReviewedSuccess, Guid? correlationId, bool checkResult, string? compileMsg, string? testMsg, string? reviewMsg, CancellationToken ct)
         {
             await using var conn = await _ds.OpenConnectionAsync(ct);
 
-            var hasCheckResult = await conn.QuerySingleAsync<int>(
-                new CommandDefinition(
-                    "select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'progress' and column_name = 'check_result'",
-                    cancellationToken: ct));
+            var hasCheckResult = await HasCheckResultColumnAsync(conn, ct);
+            var normalizedTaskName = string.IsNullOrWhiteSpace(taskName) ? $"task {taskId}" : taskName;
 
             string sql;
-            if (hasCheckResult > 0)
+            if (hasCheckResult)
             {
                 sql = """
                 INSERT INTO public.progress AS p (user_id, task_id, task_name, correlation_id, check_result, compile_stat, compile_msg, test_stat, test_msg, review_stat, review_msg, updated_at)
                 VALUES (@UserId, @TaskId, @TaskName, @CorrelationId, @CheckResult, @CompileStat, @CompileMsg, @TestStat, @TestMsg, @ReviewStat, @ReviewMsg, now())
                 ON CONFLICT (user_id, task_id) DO UPDATE
-                SET correlation_id = EXCLUDED.correlation_id,
+                SET task_name      = EXCLUDED.task_name,
+                    correlation_id = EXCLUDED.correlation_id,
                     check_result   = EXCLUDED.check_result,
                     compile_stat   = EXCLUDED.compile_stat,
                     compile_msg    = EXCLUDED.compile_msg,
@@ -117,7 +119,7 @@ namespace ProgressService
                        {
                            UserId = userId,
                            TaskId = taskId,
-                           TaskName = "task " + taskId.ToString(),
+                           TaskName = normalizedTaskName,
                            CorrelationId = correlationId,
                            CheckResult = checkResult,
                            CompileStat = isCompiledSuccess,
@@ -135,7 +137,8 @@ namespace ProgressService
                 INSERT INTO public.progress AS p (user_id, task_id, task_name, correlation_id, compile_stat, compile_msg, test_stat, test_msg, review_stat, review_msg, updated_at)
                 VALUES (@UserId, @TaskId, @TaskName, @CorrelationId, @CompileStat, @CompileMsg, @TestStat, @TestMsg, @ReviewStat, @ReviewMsg, now())
                 ON CONFLICT (user_id, task_id) DO UPDATE
-                SET correlation_id = EXCLUDED.correlation_id,
+                SET task_name      = EXCLUDED.task_name,
+                    correlation_id = EXCLUDED.correlation_id,
                     compile_stat   = EXCLUDED.compile_stat,
                     compile_msg    = EXCLUDED.compile_msg,
                     test_stat      = EXCLUDED.test_stat,
@@ -153,7 +156,7 @@ namespace ProgressService
                        {
                            UserId = userId,
                            TaskId = taskId,
-                           TaskName = "task " + taskId.ToString(),
+                           TaskName = normalizedTaskName,
                            CorrelationId = correlationId,
                            CompileStat = isCompiledSuccess,
                            CompileMsg = compileMsg,
@@ -166,5 +169,13 @@ namespace ProgressService
             }
 
         }
+
+        private static async Task<bool> HasCheckResultColumnAsync(IDbConnection conn, CancellationToken ct)
+        {
+            var count = await conn.QuerySingleAsync<int>(
+                new CommandDefinition(HasCheckResultSql, cancellationToken: ct));
+            return count > 0;
+        }
     }
 }
+

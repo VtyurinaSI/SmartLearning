@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OrchestrPatterns.Domain;
 using SmartLearning.Contracts;
 
@@ -36,12 +37,12 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
     public Event<ReviewFinished> ReviewFinishedEvent { get; private set; } = default!;
     public Event<ReviewFailed> ReviewFailedEvent { get; private set; } = default!;
     public Schedule<CheckingSaga, ReviewTimeout> ReviewTmo { get; private set; } = default!;
-    public CheckingStateMachineMt()
+    public CheckingStateMachineMt(IOptions<CheckTimeoutOptions> options)
     {
         InstanceState(x => x.CurrentState);
         Schedule(() => ReviewTmo, x => x.ReviewTimeoutTokenId, s =>
         {
-            s.Delay = TimeSpan.FromMinutes(10);
+            s.Delay = TimeSpan.FromMinutes(options.Value.ReviewMinutes);
             s.Received = r => r.CorrelateById(m => m.Message.CorrelationId);
         });
 
@@ -221,3 +222,4 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
         ctx.Saga.CompletedAt ??= DateTime.UtcNow;
     }
 }
+

@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Dapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using System.Data;
 
 namespace ProgressService
 {
@@ -8,9 +10,11 @@ namespace ProgressService
     {
         public static IServiceCollection AddUserProgressDb(this IServiceCollection services, IConfiguration cfg)
         {
-            var cs = cfg.GetConnectionString("ObjectStorage")
-                     ?? throw new InvalidOperationException("ConnectionStrings:ObjectStorage is not configured");
+            var cs = UserDbConnectionStrings.GetObjectStorage(cfg);
+            var dapperCs = UserDbConnectionStrings.GetDefaultOrObjectStorage(cfg);
 
+            Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+            services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(dapperCs));
             services.AddSingleton(_ => NpgsqlDataSource.Create(cs));
             services.AddScoped<IUserProgressRepository, UserProgressRepository>();
             services.AddSingleton<IDbBootstrapper, DbBootstrapper>();
