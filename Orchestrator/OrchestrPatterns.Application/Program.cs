@@ -98,6 +98,11 @@ orc.MapPost("/check", async (IBus bus,
 {
     var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
 
+    var exists = await patterns.TaskExistsAsync(dto.TaskId, ct);
+    if (exists == false)
+        return Results.NotFound($"Задача с id {dto.TaskId} не найдена.");
+    if (exists is null)
+        log.LogWarning("PatternService unavailable while checking task {TaskId}", dto.TaskId);
 
     await bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
 

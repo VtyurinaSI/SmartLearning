@@ -16,6 +16,23 @@ public sealed class PatternServiceClient
 
     private sealed record TaskMeta(string PatternTitle);
 
+    public async Task<bool?> TaskExistsAsync(long taskId, CancellationToken ct)
+    {
+        var url = $"/meta?taskId={taskId}";
+        using var resp = await _http.GetAsync(url, ct);
+
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+            return false;
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            _log.LogWarning("PatternService meta request failed: {StatusCode}", resp.StatusCode);
+            return null;
+        }
+
+        return true;
+    }
+
     public async Task<string?> GetPatternTitleAsync(long taskId, CancellationToken ct)
     {
         var url = $"/meta?taskId={taskId}";
