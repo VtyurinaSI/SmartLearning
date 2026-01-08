@@ -69,6 +69,9 @@ builder.Services.AddHttpClient<OrchApi>(c =>
 builder.Services.AddHttpClient<AuthApi>(c =>
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Auth"]!))
     .AddHeaderPropagation();
+builder.Services.AddHttpClient<PatternsApi>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["Downstream:Patterns"]!))
+    .AddHeaderPropagation();
 builder.Services.AddHttpClient<GatewayObjectStorageClient>(c =>
 {
     c.BaseAddress = new Uri(builder.Configuration["Downstream:Storage"]!); 
@@ -166,6 +169,12 @@ api.MapGet("/ping", () =>
 {
     return "pong";
 });
+api.MapGet("/patterns/tasks", async (PatternsApi patterns, CancellationToken ct) =>
+{
+    using var resp = await patterns.GetTasksAsync(ct);
+    return await Proxy(resp, ct);
+})
+    .WithSummary("Available tasks");
 
 api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, CancellationToken ct) =>
 {

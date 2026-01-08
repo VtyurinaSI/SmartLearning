@@ -42,6 +42,25 @@ app.MapGet("/meta", async (long taskId, ITaskCatalogRepository repo, Cancellatio
     return meta is null ? Results.NotFound() : Results.Json(meta);
 });
 
+app.MapGet("/tasks", async (ITaskCatalogRepository repo, IContentStorage storage, Microsoft.Extensions.Options.IOptions<CatalogOptions> opts, CancellationToken ct) =>
+{
+    var metas = await repo.GetAllMetaAsync(ct);
+    var o = opts.Value;
+
+    async Task<TaskListItem> BuildItemAsync(TaskMeta meta)
+    {
+        var key = BuildKey(o.BasePrefix, meta.TaskId, meta.Version, o.TaskFileName);
+        var bytes = await storage.GetAsync(key, ct);
+        var text = bytes is null ? string.Empty : Encoding.UTF8.GetString(bytes);
+        text = text.TrimStart('\uFEFF');
+        var snippet = text.Length > 100 ? text[..(100-3)]+"..." : text;
+        return new TaskListItem(meta.TaskId, meta.PatternTitle, snippet);
+    }
+
+    var items = await Task.WhenAll(metas.Select(BuildItemAsync));
+    return Results.Json(items);
+});
+
 app.MapGet("/theory", async (long taskId, ITaskCatalogRepository repo, IContentStorage storage, Microsoft.Extensions.Options.IOptions<CatalogOptions> opts, CancellationToken ct) =>
 {
     var meta = await repo.GetMetaAsync(taskId, ct);

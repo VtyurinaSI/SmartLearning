@@ -11,5 +11,11 @@ sealed class PatternsApi
         req.Headers.TryAddWithoutValidation("X-Echo", msg);
         return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
     }
+
+    public Task<HttpResponseMessage> GetTasksAsync(CancellationToken ct)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "/tasks");
+        return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+    }
 }
 

@@ -22,4 +22,23 @@ where t.task_id = @taskId
         var cmd = new CommandDefinition(sql, new { taskId }, cancellationToken: ct);
         return await db.QuerySingleOrDefaultAsync<TaskMeta>(cmd);
     }
+
+    public async Task<IReadOnlyList<TaskMeta>> GetAllMetaAsync(CancellationToken ct)
+    {
+        var sql = """
+select
+  t.task_id       as TaskId,
+  t.title         as TaskTitle,
+  p.pattern_key   as PatternKey,
+  p.title         as PatternTitle,
+  t.current_version as Version
+from public.tasks t
+join public.patterns p on p.pattern_key = t.pattern_key
+order by t.task_id
+""";
+
+        var cmd = new CommandDefinition(sql, cancellationToken: ct);
+        var rows = await db.QueryAsync<TaskMeta>(cmd);
+        return rows.AsList();
+    }
 }
