@@ -6,7 +6,9 @@ public sealed class Singleton
 
     public static Singleton Instance => _instance;
 
-    private Singleton()
+    public static Singleton GetInstance() => _instance;
+
+    internal Singleton()
     {
     }
 
