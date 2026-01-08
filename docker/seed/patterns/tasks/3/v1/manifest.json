@@ -1,0 +1,99 @@
+{
+  "id": "check-command-basics",
+  "pattern": "command",
+  "version": "1.0",
+  "target": {
+    "assemblyName": "UserAssemblyName",
+    "entrypointTypeRegex": ".*",
+    "excludeCompilerGenerated": true
+  },
+  "steps": [
+    {
+      "id": "step-find-interfaces",
+      "operation": "FindInterfaces",
+      "output": "CommandAbstractions",
+      "args": {
+        "visibility": "Any",
+        "nameRegex": ".*Command.*"
+      }
+    },
+    {
+      "id": "step-count-abstractions",
+      "operation": "CountTypes",
+      "input": "CommandAbstractions",
+      "args": {
+        "kind": "Interface",
+        "visibility": "Any",
+        "min": 1
+      }
+    },
+    {
+      "id": "step-find-execute",
+      "operation": "FindMembers",
+      "input": "CommandAbstractions",
+      "output": "CommandExecuteMembers",
+      "args": {
+        "kinds": "Method",
+        "visibility": "Any",
+        "nameRegex": "Execute"
+      }
+    },
+    {
+      "id": "step-assert-execute",
+      "operation": "AssertMemberSignature",
+      "input": "CommandExecuteMembers",
+      "args": {
+        "visibility": "Public",
+        "static": false,
+        "minMatches": 1
+      }
+    },
+    {
+      "id": "step-find-impls",
+      "operation": "FindImplementations",
+      "input": "CommandAbstractions",
+      "output": "Commands",
+      "args": {
+        "visibility": "Any",
+        "includeAbstract": false
+      }
+    },
+    {
+      "id": "step-count-impls",
+      "operation": "CountTypes",
+      "input": "Commands",
+      "args": {
+        "kind": "Class",
+        "visibility": "Any",
+        "min": 2
+      }
+    },
+    {
+      "id": "step-findtypes",
+      "operation": "FindTypes",
+      "args": {
+        "kind": "Any",
+        "visibility": "Any"
+      }
+    },
+    {
+      "id": "step-find-invokers",
+      "operation": "HasDependency",
+      "input": "AllClasses",
+      "output": "InvokerCandidates",
+      "args": {
+        "to": "CommandAbstractions",
+        "kinds": "Field,Property,ConstructorParam",
+        "visibility": "Any"
+      }
+    },
+    {
+      "id": "step-assert-invokers",
+      "operation": "AssertExists",
+      "input": "InvokerCandidates",
+      "args": {
+        "min": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "check-decorator-basics",
+  "pattern": "decorator",
+  "version": "1.0",
+  "target": {
+    "assemblyName": "UserAssemblyName",
+    "entrypointTypeRegex": ".*",
+    "excludeCompilerGenerated": true
+  },
+  "steps": [
+    {
+      "id": "step-find-interfaces",
+      "operation": "FindInterfaces",
+      "output": "ComponentAbstraction",
+      "args": {
+        "visibility": "Any",
+        "nameRegex": ".*Component.*"
+      }
+    },
+    {
+      "id": "step-count-abstraction",
+      "operation": "CountTypes",
+      "input": "ComponentAbstraction",
+      "args": {
+        "kind": "Interface",
+        "visibility": "Any",
+        "min": 1
+      }
+    },
+    {
+      "id": "step-find-implementers",
+      "operation": "FindImplementations",
+      "input": "ComponentAbstraction",
+      "output": "ComponentImplementers",
+      "args": {
+        "visibility": "Any",
+        "includeAbstract": false
+      }
+    },
+    {
+      "id": "step-count-implementers",
+      "operation": "CountTypes",
+      "input": "ComponentImplementers",
+      "args": {
+        "kind": "Class",
+        "visibility": "Any",
+        "min": 2
+      }
+    },
+    {
+      "id": "step-find-decorators",
+      "operation": "HasDependency",
+      "input": "ComponentImplementers",
+      "output": "DecoratorCandidates",
+      "args": {
+        "to": "ComponentAbstraction",
+        "kinds": "Field,Property,ConstructorParam",
+        "visibility": "Any"
+      }
+    },
+    {
+      "id": "step-assert-decorators",
+      "operation": "AssertExists",
+      "input": "DecoratorCandidates",
+      "args": {
+        "min": 1
+      }
+    }
+  ]
+}

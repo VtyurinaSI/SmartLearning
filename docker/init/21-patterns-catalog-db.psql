@@ -25,3 +25,19 @@ ON CONFLICT (pattern_key) DO NOTHING;
 INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
 VALUES (2, 'singleton', 'Singleton basics', 1)
 ON CONFLICT (task_id) DO NOTHING;
+
+INSERT INTO public.patterns(pattern_key, title)
+VALUES ('command', 'Command')
+ON CONFLICT (pattern_key) DO NOTHING;
+
+INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
+VALUES (3, 'command', 'Command basics', 1)
+ON CONFLICT (task_id) DO NOTHING;
+
+INSERT INTO public.patterns(pattern_key, title)
+VALUES ('decorator', 'Decorator')
+ON CONFLICT (pattern_key) DO NOTHING;
+
+INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
+VALUES (4, 'decorator', 'Decorator basics', 1)
+ON CONFLICT (task_id) DO NOTHING;

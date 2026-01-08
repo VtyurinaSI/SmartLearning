@@ -9,26 +9,52 @@
   },
   "steps": [
     {
-      "id": "step-count-singleton",
-      "operation": "CountTypes",
-      "output": "SingletonTypes",
+      "id": "step-findtypes",
+      "operation": "FindTypes",
       "args": {
-        "kind": "Class",
-        "visibility": "Any",
-        "nameRegex": "^Singleton$",
-        "exact": 1
+        "kind": "Any",
+        "visibility": "Any"
       }
     },
     {
-      "id": "step-find-instance",
+      "id": "step-find-ctors",
       "operation": "FindMembers",
-      "input": "SingletonTypes",
+      "input": "AllClasses",
+      "output": "AllCtors",
       "args": {
-        "kinds": "Property",
+        "kinds": "Constructor",
+        "visibility": "Any"
+      }
+    },
+    {
+      "id": "step-assert-ctor-internal",
+      "operation": "AssertMemberSignature",
+      "input": "AllCtors",
+      "args": {
+        "visibility": "Internal",
+        "minMatches": 1
+      }
+    },
+    {
+      "id": "step-find-accessors",
+      "operation": "FindMembers",
+      "input": "AllClasses",
+      "output": "SingletonAccessors",
+      "args": {
+        "kinds": "Field,Property,Method",
         "visibility": "Any",
         "static": true,
-        "nameRegex": "^Instance$",
-        "returnTypeRegex": ".*Singleton$"
+        "nameRegex": "Instance|GetInstance"
+      }
+    },
+    {
+      "id": "step-assert-accessors",
+      "operation": "AssertMemberSignature",
+      "input": "SingletonAccessors",
+      "args": {
+        "visibility": "Public",
+        "static": true,
+        "minMatches": 1
       }
     }
   ]
