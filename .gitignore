@@ -69,3 +69,5 @@
 /PatternService/obj
 /PatternService/bin/Debug/net8.0
 /PatternForCheckingExamples/SingletonPatternExample/obj
+/PatternForCheckingExamples/CommandPatternExample/obj
+/PatternForCheckingExamples/DecoratorPatternExample/obj
