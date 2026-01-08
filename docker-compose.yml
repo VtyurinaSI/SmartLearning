@@ -105,10 +105,10 @@ services:
       dockerfile: ./Dockerfile
       target: runtime
       args:
-        PROJECT_PATH: UserService/UserSvcStub.csproj
+        PROJECT_PATH: UserService/UserService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      APP_DLL: UserSvcStub.dll
+      APP_DLL: UserService.dll
     depends_on:
       ollama-pull-llama: { condition: service_completed_successfully }
       postgres:  { condition: service_healthy }

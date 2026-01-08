@@ -13,6 +13,7 @@ namespace ProgressService
 
             services.AddSingleton(_ => NpgsqlDataSource.Create(cs));
             services.AddScoped<IUserProgressRepository, UserProgressRepository>();
+            services.AddSingleton<IDbBootstrapper, DbBootstrapper>();
             return services;
         }
     }

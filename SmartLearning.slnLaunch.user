@@ -27,7 +27,7 @@
         "Action": "Start"
       },
       {
-        "Path": "UserService\\UserSvcStub.csproj",
+        "Path": "UserService\\UserService.csproj",
         "Action": "Start"
       }
     ]

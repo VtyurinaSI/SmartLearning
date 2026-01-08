@@ -184,7 +184,27 @@ api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, Ca
     return await Proxy(resp, ct);
 })
     .RequireAuthorization()
-.WithSummary("Requesting user progress");
+    .WithSummary("Requesting user progress");
+
+api.MapGet("/users/me", async (UsersApi users, CancellationToken ct) =>
+{
+    using var resp = await users.GetMeAsync(ct);
+    return await Proxy(resp, ct);
+})
+    .RequireAuthorization()
+    .WithSummary("Current user profile");
+
+
+
+api.MapGet("/users/{id:guid}", async (Guid id, UsersApi users, CancellationToken ct) =>
+{
+    using var resp = await users.GetUserAsync(id, ct);
+    return await Proxy(resp, ct);
+})
+    .RequireAuthorization()
+    .WithSummary("Get user profile");
+
+
 
 api.MapPost("/orc/check", async (
     [FromQuery] long taskId,
@@ -246,4 +266,8 @@ static async Task<IResult> Proxy(HttpResponseMessage resp, CancellationToken ct)
     var body = await resp.Content.ReadAsStringAsync(ct);
     return Results.Content(body, contentType, Encoding.UTF8, (int)resp.StatusCode);
 }
+
+
+
+
 

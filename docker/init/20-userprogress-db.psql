@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS public.users (
   user_prog_lang  text
 );
 
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  user_id uuid PRIMARY KEY,
+  role    text NOT NULL,
+  CONSTRAINT user_roles_user_fk
+    FOREIGN KEY (user_id)
+    REFERENCES public.users(user_id)
+    ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS public.progress (
   user_id        uuid    NOT NULL,
   task_id        bigint  NOT NULL,

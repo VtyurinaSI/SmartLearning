@@ -1,10 +1,13 @@
 using HealthChecks.UI.Client;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using ProgressService;
 using System.Data;
-using UserSvcStub;
+using System.Text;
+using UserService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -19,6 +22,25 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 builder.Services.AddTransient<IDbConnection>(_ => new NpgsqlConnection(cs));
 
 builder.Services.AddControllers();
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("Jwt:Key is not configured");
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddMassTransit(x =>
 {
@@ -39,6 +61,15 @@ builder.Services.AddMassTransit(x =>
     });
 });
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var bootstrapper = scope.ServiceProvider.GetRequiredService<IDbBootstrapper>();
+    await bootstrapper.EnsureAsync();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false
@@ -57,4 +88,4 @@ app.MapGet("/ping", (HttpContext ctx) =>
     Console.WriteLine($"[users-svc] modified: {echo}");
     return Results.Json(new { svc = "users", got = echo });
 });
-app.Run();
+await app.RunAsync();

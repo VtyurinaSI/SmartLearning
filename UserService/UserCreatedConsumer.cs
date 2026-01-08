@@ -1,7 +1,7 @@
 ﻿using MassTransit;
 using SmartLearning.Contracts;
 
-namespace UserSvcStub
+namespace UserService
 {
     public class UserCreatedConsumer : IConsumer<UserCreated>
     {
