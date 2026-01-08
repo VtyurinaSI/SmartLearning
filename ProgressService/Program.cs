@@ -78,18 +78,11 @@ app.MapGet("/user_progress/{userId}", async (Guid userId, IUserProgressRepositor
         })
         .ToArray();
 
-    long next = 1;
-    for (int i = 0; i < compl.Length; i++)
-    {
-        var expected = i + 1;
-        if (compl[i].TaskId != expected) { next = expected; break; }
-        next = expected + 1;
-    }
-    UserProgress prog = new(compl, inp, next);
+    UserProgress prog = new(compl, inp);
     return Results.Json(prog);
 });
 app.Run();
-public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks, long NextTask);
+public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks);
 public record ComplitedTasks(long TaskId);
 public record InProcessTasks(long TaskId, string NextCheckingStage, string Comment);
 public enum CheckingStage

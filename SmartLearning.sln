@@ -51,6 +51,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrategyPatternExample", "P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SingletonPatternExample", "PatternForCheckingExamples\SingletonPatternExample\SingletonPatternExample.csproj", "{C836886D-69E6-4D08-88BA-6DFCD99AD8C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandPatternExample", "PatternForCheckingExamples\CommandPatternExample\CommandPatternExample.csproj", "{89E2A266-053B-4C75-BDC8-016D7707C5C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DecoratorPatternExample", "PatternForCheckingExamples\DecoratorPatternExample\DecoratorPatternExample.csproj", "{B542BA31-5ADD-4285-A5E1-505B31F080C4}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PatternService", "PatternService\PatternService.csproj", "{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}"
 EndProject
 Global
@@ -119,6 +123,14 @@ Global
 		{C836886D-69E6-4D08-88BA-6DFCD99AD8C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C836886D-69E6-4D08-88BA-6DFCD99AD8C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C836886D-69E6-4D08-88BA-6DFCD99AD8C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89E2A266-053B-4C75-BDC8-016D7707C5C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89E2A266-053B-4C75-BDC8-016D7707C5C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89E2A266-053B-4C75-BDC8-016D7707C5C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89E2A266-053B-4C75-BDC8-016D7707C5C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B542BA31-5ADD-4285-A5E1-505B31F080C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B542BA31-5ADD-4285-A5E1-505B31F080C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B542BA31-5ADD-4285-A5E1-505B31F080C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B542BA31-5ADD-4285-A5E1-505B31F080C4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -133,7 +145,6 @@ Global
 		{76F28C34-38CD-E58E-9DE6-26ACE34530E5} = {6431E4B1-C5CF-429F-A57A-125BFF036AF3}
 		{8D09398D-D323-3E73-8BC6-7A33A17B1DA0} = {6431E4B1-C5CF-429F-A57A-125BFF036AF3}
 		{619E8049-7B31-314A-E085-74387B64A1BC} = {D2930F2E-9817-4C7E-8AA8-976A5168841E}
-		{C836886D-69E6-4D08-88BA-6DFCD99AD8C5} = {D2930F2E-9817-4C7E-8AA8-976A5168841E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB1BD21-B62E-4119-AF65-3459797D67F8}
