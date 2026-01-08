@@ -4,6 +4,8 @@ using ReflectionService.Domain.ManifestModel;
 using ReflectionService.Domain.StepFactory;
 using System.Reflection;
 
+namespace ReflectionService.Domain.PipelineOfCheck;
+
 public sealed class CheckingPipeline
 {
     private readonly IStepHandlerFactory _factory;
