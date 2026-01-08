@@ -17,3 +17,11 @@ ON CONFLICT (pattern_key) DO NOTHING;
 INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
 VALUES (1, 'strategy', 'Strategy — basics', 1)
 ON CONFLICT (task_id) DO NOTHING;
+
+INSERT INTO public.patterns(pattern_key, title)
+VALUES ('singleton', 'Singleton')
+ON CONFLICT (pattern_key) DO NOTHING;
+
+INSERT INTO public.tasks(task_id, pattern_key, title, current_version)
+VALUES (2, 'singleton', 'Singleton basics', 1)
+ON CONFLICT (task_id) DO NOTHING;

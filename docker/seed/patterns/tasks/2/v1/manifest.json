@@ -1,0 +1,35 @@
+{
+  "id": "check-singleton-instance",
+  "pattern": "singleton",
+  "version": "1.0",
+  "target": {
+    "assemblyName": "UserAssemblyName",
+    "entrypointTypeRegex": ".*",
+    "excludeCompilerGenerated": true
+  },
+  "steps": [
+    {
+      "id": "step-count-singleton",
+      "operation": "CountTypes",
+      "output": "SingletonTypes",
+      "args": {
+        "kind": "Class",
+        "visibility": "Any",
+        "nameRegex": "^Singleton$",
+        "exact": 1
+      }
+    },
+    {
+      "id": "step-find-instance",
+      "operation": "FindMembers",
+      "input": "SingletonTypes",
+      "args": {
+        "kinds": "Property",
+        "visibility": "Any",
+        "static": true,
+        "nameRegex": "^Instance$",
+        "returnTypeRegex": ".*Singleton$"
+      }
+    }
+  ]
+}
