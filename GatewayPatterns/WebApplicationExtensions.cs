@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
 using SmartLearning.Contracts;
+using System.Net;
 
 namespace GatewayPatterns
 {
@@ -38,24 +39,33 @@ namespace GatewayPatterns
         public static void MapGatewayEndpoints(this WebApplication app)
         {
             var api = app.MapGroup("/api");
-            api.MapPost("/file", (IFormFile file) =>
-            {
-                return Results.Ok($"Получили {file.FileName}!");
-            })
-               .DisableAntiforgery()
-               .Produces(StatusCodes.Status200OK)
-               .WithOpenApi();
-
-            api.MapGet("/ping", () =>
-            {
-                return "pong";
-            });
+           
             api.MapGet("/patterns/tasks", async (PatternsApi patterns, CancellationToken ct) =>
             {
                 using var resp = await patterns.GetTasksAsync(ct);
                 return await GatewayProxy.ProxyAsync(resp, ct);
             })
                 .WithSummary("Available tasks");
+
+            api.MapGet("/patterns/task_materials", async (long taskId, PatternsApi patterns, CancellationToken ct) =>
+            {
+                using var theoryResp = await patterns.GetTheoryAsync(taskId, ct);
+                if (theoryResp.StatusCode == HttpStatusCode.NotFound)
+                    return Results.NotFound($"Task {taskId} not found.");
+                if (!theoryResp.IsSuccessStatusCode)
+                    return await GatewayProxy.ProxyAsync(theoryResp, ct);
+
+                using var taskResp = await patterns.GetTaskAsync(taskId, ct);
+                if (taskResp.StatusCode == HttpStatusCode.NotFound)
+                    return Results.NotFound($"Task {taskId} not found.");
+                if (!taskResp.IsSuccessStatusCode)
+                    return await GatewayProxy.ProxyAsync(taskResp, ct);
+
+                var theory = await theoryResp.Content.ReadAsStringAsync(ct);
+                var task = await taskResp.Content.ReadAsStringAsync(ct);
+                return Results.Json(new TaskMaterials(theory, task));
+            })
+                .WithSummary("Task theory and assignment");
 
             api.MapGet("/progress/user_progress", async (HttpContext ctx, ProgressApi pr, CancellationToken ct) =>
             {

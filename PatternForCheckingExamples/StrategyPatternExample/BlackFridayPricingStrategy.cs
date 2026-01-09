@@ -6,7 +6,7 @@ public sealed class BlackFridayPricingStrategy : IPricingStrategy
 
     public BlackFridayPricingStrategy(decimal discountFactor = 0.70m)
     {
-        if (discountFactor <= 0m || discountFactorq > 1m)
+        if (discountFactor <= 0m || discountFactor > 1m)
             throw new ArgumentOutOfRangeException(nameof(discountFactor), "Factor must be in (0, 1].");
 
         _discountFactor = discountFactor;

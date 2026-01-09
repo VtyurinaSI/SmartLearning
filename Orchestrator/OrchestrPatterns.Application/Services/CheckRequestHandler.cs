@@ -1,7 +1,6 @@
 using MassTransit;
 using Microsoft.Extensions.Options;
 using SmartLearning.Contracts;
-using System.Text;
 
 namespace OrchestrPatterns.Application
 {
@@ -9,28 +8,22 @@ namespace OrchestrPatterns.Application
     {
         private readonly IBus _bus;
         private readonly CompletionHub _hub;
-        private readonly IHttpClientFactory _http;
         private readonly PatternServiceClient _patterns;
         private readonly ILogger<CheckRequestHandler> _log;
         private readonly CheckTimeoutOptions _timeouts;
-        private readonly ReviewStorageOptions _reviewStorage;
 
         public CheckRequestHandler(
             IBus bus,
             CompletionHub hub,
-            IHttpClientFactory http,
             PatternServiceClient patterns,
             ILogger<CheckRequestHandler> log,
-            IOptions<CheckTimeoutOptions> timeouts,
-            IOptions<ReviewStorageOptions> reviewStorage)
+            IOptions<CheckTimeoutOptions> timeouts)
         {
             _bus = bus;
             _hub = hub;
-            _http = http;
             _patterns = patterns;
             _log = log;
             _timeouts = timeouts.Value;
-            _reviewStorage = reviewStorage.Value;
         }
 
         public async Task<IResult> HandleAsync(StartChecking dto, CancellationToken ct)
@@ -91,23 +84,6 @@ namespace OrchestrPatterns.Application
                     true, compilRes,
                     true, testRes,
                     false, reviewRes));
-            }
-
-            var minioClient = _http.CreateClient("MinioStorage");
-            var url = $"/objects/llm/file?userId={dto.UserId}&taskId={dto.TaskId}&fileName={_reviewStorage.FileName}";
-
-            try
-            {
-                using var respMinio = await minioClient.GetAsync(url, ct);
-                if (respMinio.IsSuccessStatusCode)
-                {
-                    var bytes = await respMinio.Content.ReadAsByteArrayAsync(ct);
-                    reviewRes = Encoding.UTF8.GetString(bytes);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogDebug(ex, "Failed to read review from storage for {Cid}", id);
             }
 
             await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, true, id, true, compilRes, testRes, reviewRes), ct);

@@ -104,6 +104,8 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
 
             var decision = _parser.Parse(chat.Answer);
             var finalText = _formatter.Format(decision);
+            var publicText = BuildPublicText(decision, includeScore: true);
+            var publicFailedText = BuildPublicText(decision, includeScore: false);
 
             var finalBytes = Encoding.UTF8.GetBytes(finalText);
 
@@ -118,9 +120,9 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
                 context.CancellationToken);
 
             if (decision.Passed)
-                await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, finalText));
+                await context.Publish(new ReviewFinished(msg.CorrelationId, msg.UserId, msg.TaskId, publicText));
             else
-                await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId, finalText));
+                await context.Publish(new ReviewFailed(msg.CorrelationId, msg.UserId, msg.TaskId, publicFailedText));
         }
         catch (Exception ex)
         {
@@ -131,5 +133,32 @@ public sealed class ReviewRequestedConsumer : IConsumer<ReviewRequested>
         {
             _cleaner.TryDelete(workDir);
         }
+    }
+
+    private static string BuildPublicText(ReviewDecision decision, bool includeScore)
+    {
+        var explanation = StripEnvelope(decision.Explanation).Trim();
+        if (string.IsNullOrWhiteSpace(explanation))
+            explanation = StripEnvelope(decision.RawAnswer).Trim();
+        if (!includeScore)
+            return explanation;
+        return explanation + $"\nОценка от 0 до 1: {decision.Confidence:0.00}";
+    }
+
+    private static string StripEnvelope(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        var value = text;
+        var rawIndex = value.IndexOf("raw_llm_response:", StringComparison.OrdinalIgnoreCase);
+        if (rawIndex >= 0)
+            value = value[..rawIndex];
+
+        var explanationIndex = value.IndexOf("explanation:", StringComparison.OrdinalIgnoreCase);
+        if (explanationIndex >= 0)
+            value = value[(explanationIndex + "explanation:".Length)..];
+
+        return value.Trim();
     }
 }
