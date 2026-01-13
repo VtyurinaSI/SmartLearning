@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16
     environment:
@@ -64,16 +64,16 @@ services:
     command: ["-fsS","-X","POST","-H","Content-Type: application/json","-d","{\"name\":\"llama3.1\"}","http://ollama:11434/api/pull"]
     restart: "no"
 
-  gatewaypatterns:
+  gateway:
     build:
       context: .
       dockerfile: ./Dockerfile
       target: runtime
       args:
-        PROJECT_PATH: GatewayPatterns/GatewayPatterns.csproj
+        PROJECT_PATH: Gateway/Gateway.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      APP_DLL: GatewayPatterns.dll
+      APP_DLL: Gateway.dll
     depends_on:
       ollama-pull-llama: { condition: service_completed_successfully }
       users:         { condition: service_started }
@@ -89,10 +89,10 @@ services:
       dockerfile: ./Dockerfile
       target: runtime
       args:
-        PROJECT_PATH: Orchestrator/OrchestrPatterns.Application/OrchestrPatterns.Application.csproj
+        PROJECT_PATH: Orchestrator/Orchestrator.Application/Orchestrator.Application.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      APP_DLL: OrchestrPatterns.Application.dll
+      APP_DLL: Orchestrator.Application.dll
     depends_on:
       ollama-pull-llama: { condition: service_completed_successfully }
       postgres:  { condition: service_healthy }
@@ -271,3 +271,4 @@ volumes:
   authkeys:
   minio_data:
   nuget_cache:
+

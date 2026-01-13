@@ -1,6 +1,0 @@
-@OrchestrPatterns.Application_HostAddress = http://localhost:5175
-
-GET {{OrchestrPatterns.Application_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

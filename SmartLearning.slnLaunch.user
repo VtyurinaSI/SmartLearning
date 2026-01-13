@@ -1,9 +1,9 @@
-[
+﻿[
   {
-    "Name": "Новый профиль",
+    "Name": "РќРѕРІС‹Р№ РїСЂРѕС„РёР»СЊ",
     "Projects": [
       {
-        "Path": "GatewayPatterns\\GatewayPatterns.csproj",
+        "Path": "Gateway\\Gateway.csproj",
         "Action": "Start"
       },
       {
@@ -11,7 +11,7 @@
         "Action": "Start"
       },
       {
-        "Path": "Orchestrator\\OrchestrPatterns.Application\\OrchestrPatterns.Application.csproj",
+        "Path": "Orchestrator\\Orchestrator.Application\\Orchestrator.Application.csproj",
         "Action": "Start"
       },
       {
@@ -33,3 +33,4 @@
     ]
   }
 ]
+

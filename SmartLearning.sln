@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Orchestrator", "Orchestrator", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Application", "Orchestrator\OrchestrPatterns.Application\OrchestrPatterns.Application.csproj", "{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator.Application", "Orchestrator\Orchestrator.Application\Orchestrator.Application.csproj", "{6B5105A3-ED38-FE0F-BC2B-7590D34EDFB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestrPatterns.Domain", "Orchestrator\OrchestrPatterns.Domain\OrchestrPatterns.Domain.csproj", "{D06D686E-871A-2153-E55B-C8C388376455}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator.Domain", "Orchestrator\Orchestrator.Domain\Orchestrator.Domain.csproj", "{D06D686E-871A-2153-E55B-C8C388376455}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LlmService", "LlmService\LlmService.csproj", "{8A3393AF-2DB8-3FEC-FEEE-38E59BDEE7BD}"
 EndProject
@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService", "UserService\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLearning.Contracts", "SmartLearning.Contracts\SmartLearning.Contracts.csproj", "{A518198D-70CF-4ABB-A4D7-41D839F5B73E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayPatterns", "GatewayPatterns\GatewayPatterns.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{D5159496-AC62-C0E9-688D-3CF8D518967E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerService", "CompilerService\CompilerService.csproj", "{06907A6D-F5B1-48BD-9798-9F5F5194B97D}"
 EndProject
@@ -116,25 +116,17 @@ Global
 		{19BEE868-30F0-4B12-9CEB-D82DB5B64B25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19BEE868-30F0-4B12-9CEB-D82DB5B64B25}.Release|Any CPU.Build.0 = Release|Any CPU
 		{619E8049-7B31-314A-E085-74387B64A1BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{619E8049-7B31-314A-E085-74387B64A1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{619E8049-7B31-314A-E085-74387B64A1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{619E8049-7B31-314A-E085-74387B64A1BC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D3E28F9-DE9A-AF04-6FE1-F9BD6B78F45B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{154E7626-3AE7-01BA-AB86-7F417F5319ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{154E7626-3AE7-01BA-AB86-7F417F5319ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{154E7626-3AE7-01BA-AB86-7F417F5319ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{154E7626-3AE7-01BA-AB86-7F417F5319ED}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9660C264-CE53-C02E-A861-E4A972C7B11B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9660C264-CE53-C02E-A861-E4A972C7B11B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9660C264-CE53-C02E-A861-E4A972C7B11B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9660C264-CE53-C02E-A861-E4A972C7B11B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{321D2AB3-E5DA-EBAF-DF76-C6ADB560A9AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{321D2AB3-E5DA-EBAF-DF76-C6ADB560A9AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{321D2AB3-E5DA-EBAF-DF76-C6ADB560A9AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{321D2AB3-E5DA-EBAF-DF76-C6ADB560A9AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -153,3 +145,4 @@ Global
 		SolutionGuid = {DAB1BD21-B62E-4119-AF65-3459797D67F8}
 	EndGlobalSection
 EndGlobal
+
