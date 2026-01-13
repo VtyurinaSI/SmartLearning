@@ -71,3 +71,5 @@
 /PatternForCheckingExamples/SingletonPatternExample/obj
 /PatternForCheckingExamples/CommandPatternExample/obj
 /PatternForCheckingExamples/DecoratorPatternExample/obj
+/CompilerService/bin
+/CompilerService/obj
