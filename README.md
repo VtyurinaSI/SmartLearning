@@ -44,14 +44,14 @@ Orchestrator/Compiler/Reflection/Llm ---> RabbitMQ
 - PatternService: каталог заданий, теории и материалов.
 - AuthService/UserService: учетные данные, профили и роли.
 
-## Как запустить (один путь)
+## Как запустить 
 Единый вариант запуска через Docker:
 ```
-docker compose up --build
+docker-compose up --build
 ```
 
 ## Демо-сценарий
-1) Пользователь загружает исходный код через Gateway (UI или API).
+1) Пользователь загружает исходный код через Gateway.
 2) Orchestrator инициирует проверку и публикует задания в RabbitMQ.
 3) CompilerService компилирует решение и сохраняет артефакты в MinIO через ObjectStorageService.
 4) ReflectionService скачивает сборку и выполняет рефлексионные проверки структуры и сигнатур.
@@ -72,8 +72,8 @@ Swagger-интерфейсы:
 - LlmService: http://localhost:6003/swagger
 
 Инфраструктура:
-- MinIO (консоль): http://localhost:9001
-- RabbitMQ (консоль управления): http://localhost:15672 (логин/пароль по умолчанию)
+- MinIO (UI): http://localhost:9001
+- RabbitMQ (UI): http://localhost:15672 (логин/пароль по умолчанию)
 - Postgres: localhost:5432 (параметры в `docker-compose.yml`)
 
 Логи:
