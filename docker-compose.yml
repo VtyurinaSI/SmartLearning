@@ -164,7 +164,7 @@
       object-storage-service: { condition: service_started }
       postgres:  { condition: service_healthy }
       patterns-seed: { condition: service_completed_successfully }
-    ports: ["6006:8080"]
+    ports: ["6012:8080"]
 
   llm:
     build:

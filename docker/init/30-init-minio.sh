@@ -11,10 +11,12 @@ set -e
 : "${MINIO_PATTERNS_BUCKET:=patterns}"
 : "${MINIO_SEED_PATTERNS_DIR:=/seed/patterns}"
 
-mc alias set "$MINIO_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-
-
 i=0
+until mc alias set "$MINIO_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+  i=$((i+1)); [ $i -gt 120 ] && echo "MinIO alias init failed" && exit 1
+  sleep 1
+done
+
 until mc ls "$MINIO_ALIAS" >/dev/null 2>&1; do
   i=$((i+1)); [ $i -gt 120 ] && echo "MinIO not ready" && exit 1
   sleep 1
