@@ -32,7 +32,7 @@ namespace Orchestrator.Application
 
             var exists = await _patterns.TaskExistsAsync(dto.TaskId, ct);
             if (exists == false)
-                return Results.NotFound($"Вђ-ВђГёВђ?ВђГёвЂГВђГё вЂ? id {dto.TaskId} Вђ?ВђГ§ Вђ?ВђГёВђГјВђ?ВђГ§Вђ?ВђГё.");
+                return Results.NotFound($"Задание с id {dto.TaskId} не найдено.");
             if (exists is null)
                 _log.LogWarning("PatternService unavailable while checking task {TaskId}", dto.TaskId);
 
@@ -95,4 +95,5 @@ namespace Orchestrator.Application
         }
     }
 }
+
 
