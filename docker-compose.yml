@@ -7,7 +7,7 @@
     ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
@@ -21,13 +21,23 @@
     environment:
       PGPASSWORD: 1234
     volumes:
-      - ./docker/init:/seed:ro
+      - ./docker/postgres-init:/seed:ro
     entrypoint:
       - /bin/sh
       - -c
       - |
+        set -e
+        i=0
+        until pg_isready -h postgres -U postgres >/dev/null 2>&1; do
+          i=$((i+1)); [ $i -gt 120 ] && echo "Postgres not ready" && exit 1
+          sleep 1
+        done
         createdb -h postgres -U postgres PatternsCatalog 2>/dev/null || true
-        psql -v ON_ERROR_STOP=1 -h postgres -U postgres -d PatternsCatalog -f /seed/21-patterns-catalog-db.psql
+        i=0
+        until psql -v ON_ERROR_STOP=1 -h postgres -U postgres -d PatternsCatalog -f /seed/21-patterns-catalog-db.psql; do
+          i=$((i+1)); [ $i -gt 20 ] && echo "Seed failed after retries" && exit 1
+          sleep 3
+        done
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -243,7 +253,7 @@
       MINIO_BUCKETS: smartlearning,patterns
       MINIO_PATTERNS_BUCKET: patterns
     volumes:
-      - ./docker/init/30-init-minio.sh:/init/30-init-minio.sh:ro
+      - ./docker/minio-init/30-init-minio.sh:/init/30-init-minio.sh:ro
       - ./docker/seed:/seed:ro
     entrypoint: ["/bin/sh","-c","tr -d '\\r' < /init/30-init-minio.sh > /tmp/init.sh && chmod +x /tmp/init.sh && /tmp/init.sh"]
 
