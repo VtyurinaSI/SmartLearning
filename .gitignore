@@ -74,3 +74,8 @@
 /CompilerService/bin
 /CompilerService/obj
 /.vscode
+/Orchestrator/Orchestrator.Application/bin
+/Orchestrator/Orchestrator.Application/obj/Debug/net8.0
+/Orchestrator/Orchestrator.Application/obj
+/Orchestrator/Orchestrator.Domain/bin
+/Orchestrator/Orchestrator.Domain/obj
