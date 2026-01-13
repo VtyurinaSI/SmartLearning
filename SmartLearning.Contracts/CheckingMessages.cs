@@ -3,8 +3,8 @@
     public record UserCreated(Guid UserId, string Login, string Email);
     public record UpdateProgress(Guid UserId, long TaskId, string? TaskName, bool IsCompiledSuccess, bool IsTestedSuccess, bool IsReviewedSuccess, Guid? CorrelationId, bool CheckResult, string? CompileMsg, string? TestMsg, string? ReviewMsg);
     public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId);
-    public record RecievedForChecking(long TaskId, string OrigCode);
-    public record CheckingResults(Guid UserId, Guid CorrelationId, string? CompilRes, string? TestsRes, string? ReviewRes);
+    public record ReceivedForChecking(long TaskId, string OrigCode);
+    public record CheckingResults(Guid UserId, Guid CorrelationId, string? CompileRes, string? TestsRes, string? ReviewRes);
 
     public record UserProgressRow(Guid UserId, long TaskId, string TaskName, Guid? CorrelationId, bool CheckResult,
                                   bool CompileStat, string? CompileMsg,
@@ -32,3 +32,4 @@
 
     public record Finalize(Guid CorrelationId, Guid UserId, long TaskId);
 }
+

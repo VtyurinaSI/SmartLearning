@@ -121,10 +121,10 @@ services:
       dockerfile: ./Dockerfile
       target: sdk-runtime
       args:
-        PROJECT_PATH: CompilerSevice/CompilerSevice.csproj
+        PROJECT_PATH: CompilerService/CompilerService.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      APP_DLL: CompilerSevice.dll
+      APP_DLL: CompilerService.dll
     depends_on:
       ollama-pull-llama: { condition: service_completed_successfully }
       postgres:  { condition: service_healthy }

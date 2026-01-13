@@ -1,4 +1,4 @@
-namespace CompilerSevice;
+﻿namespace CompilerService;
 
 public sealed class BuildTargetLocator
 {
@@ -25,3 +25,4 @@ public sealed class BuildTargetLocator
 
     public sealed record TargetsInfo(IReadOnlyList<string> Solutions, IReadOnlyList<string> Projects);
 }
+

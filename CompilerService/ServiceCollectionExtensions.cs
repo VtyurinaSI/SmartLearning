@@ -1,9 +1,9 @@
-using CompilerSevice.Services;
+﻿using CompilerService.Services;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CompilerSevice
+namespace CompilerService
 {
     public static class ServiceCollectionExtensions
     {
@@ -63,3 +63,4 @@ namespace CompilerSevice
         }
     }
 }
+

@@ -1,4 +1,4 @@
-namespace ProgressService
+﻿namespace ProgressService
 {
     public static class WebApplicationExtensions
     {
@@ -21,9 +21,9 @@ namespace ProgressService
             {
                 var story = await repo.GetUserProgressAsync(userId, ct);
 
-                ComplitedTasks[] compl = story
+                CompletedTasks[] compl = story
                     .Where(r => r.CheckResult == true)
-                    .Select(r => new ComplitedTasks(r.TaskId, string.IsNullOrWhiteSpace(r.TaskName) ? $"task {r.TaskId}" : r.TaskName))
+                    .Select(r => new CompletedTasks(r.TaskId, string.IsNullOrWhiteSpace(r.TaskName) ? $"task {r.TaskId}" : r.TaskName))
                     .OrderBy(c => c.TaskId)
                     .ToArray();
 
@@ -50,3 +50,4 @@ namespace ProgressService
         }
     }
 }
+

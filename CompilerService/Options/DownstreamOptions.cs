@@ -1,7 +1,8 @@
-namespace CompilerSevice
+﻿namespace CompilerService
 {
     public sealed class DownstreamOptions
     {
         public string Storage { get; set; } = string.Empty;
     }
 }
+

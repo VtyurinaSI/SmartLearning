@@ -19,7 +19,7 @@
         "Action": "Start"
       },
       {
-        "Path": "CompilerSevice\\CompilerSevice.csproj",
+        "Path": "CompilerService\\CompilerService.csproj",
         "Action": "Start"
       },
       {

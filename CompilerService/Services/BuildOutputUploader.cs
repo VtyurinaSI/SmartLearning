@@ -1,4 +1,4 @@
-namespace CompilerSevice;
+﻿namespace CompilerService;
 
 public sealed class BuildOutputUploader
 {
@@ -42,3 +42,4 @@ public sealed class BuildOutputUploader
         await Task.WhenAll(uploads);
     }
 }
+

@@ -1,6 +1,6 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace CompilerSevice.Services;
+namespace CompilerService.Services;
 
 public sealed class DotnetRunner
 {
@@ -27,3 +27,4 @@ public sealed class DotnetRunner
 }
 
 public sealed record DotnetResult(int ExitCode, string StdOut, string StdErr);
+

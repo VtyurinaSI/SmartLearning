@@ -4,7 +4,7 @@ using Npgsql;
 using SmartLearning.Contracts;
 using System.Threading.Tasks;
 
-namespace ProgressService
+namespace UserService
 {
     public class UserProgressRepository : IUserProgressRepository
     {
@@ -108,3 +108,4 @@ namespace ProgressService
         }
     }
 }
+

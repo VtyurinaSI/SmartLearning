@@ -1,4 +1,4 @@
-using HealthChecks.UI.Client;
+﻿using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 namespace UserService
@@ -30,10 +30,11 @@ namespace UserService
             {
                 var echo = ctx.Request.Headers["X-Echo"].FirstOrDefault();
                 Console.WriteLine($"[users-svc] received: {echo}");
-                echo += ", GateWay [by users-svc]!";
+                echo += ", Gateway [by users-svc]!";
                 Console.WriteLine($"[users-svc] modified: {echo}");
                 return Results.Json(new { svc = "users", got = echo });
             });
         }
     }
 }
+

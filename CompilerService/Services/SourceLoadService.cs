@@ -1,6 +1,6 @@
-using SmartLearning.FilesUtils;
+﻿using SmartLearning.FilesUtils;
 
-namespace CompilerSevice;
+namespace CompilerService;
 
 public sealed class SourceLoadService
 {
@@ -23,3 +23,4 @@ public sealed class SourceLoadService
             ct: ct);
     }
 }
+

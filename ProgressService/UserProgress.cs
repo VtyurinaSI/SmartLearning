@@ -1,4 +1,5 @@
-namespace ProgressService
+﻿namespace ProgressService
 {
-    public record UserProgress(ComplitedTasks[] ComplitedTasks, InProcessTasks[] InProcessTasks);
+    public record UserProgress(CompletedTasks[] CompletedTasks, InProcessTasks[] InProcessTasks);
 }
+

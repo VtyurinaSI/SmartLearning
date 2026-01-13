@@ -1,8 +1,8 @@
-using SmartLearning.FilesUtils;
+﻿using SmartLearning.FilesUtils;
 using System.Net;
 using System.Net.Http.Headers;
 
-namespace CompilerSevice;
+namespace CompilerService;
 
 public sealed class StageStorageClient : IStageStorageClient
 {
@@ -55,3 +55,4 @@ public sealed class StageStorageClient : IStageStorageClient
         return new SourceStageLoader.StorageDownload(bytes, ctType, name);
     }
 }
+

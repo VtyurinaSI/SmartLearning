@@ -1,5 +1,4 @@
-﻿using ProgressService;
-using UserService;
+﻿using UserService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -22,3 +21,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapUserServiceEndpoints();
 await app.RunAsync();
+
+

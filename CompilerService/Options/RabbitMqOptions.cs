@@ -1,4 +1,4 @@
-namespace CompilerSevice
+﻿namespace CompilerService
 {
     public sealed class RabbitMqOptions
     {
@@ -8,3 +8,4 @@ namespace CompilerSevice
         public string Password { get; set; } = "guest";
     }
 }
+

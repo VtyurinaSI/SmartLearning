@@ -1,4 +1,4 @@
-namespace CompilerSevice
+﻿namespace CompilerService
 {
     public static class WebApplicationExtensions
     {
@@ -9,3 +9,4 @@ namespace CompilerSevice
         }
     }
 }
+

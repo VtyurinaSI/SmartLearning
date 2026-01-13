@@ -1,4 +1,4 @@
-﻿using CompilerSevice;
+﻿using CompilerService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -17,3 +17,4 @@ app.UseCompilerServiceSwagger();
 app.UseHttpsRedirection();
 
 app.Run();
+

@@ -1,10 +1,10 @@
-﻿using CompilerSevice.Services;
+﻿using CompilerService.Services;
 using MassTransit;
 using SmartLearning.Contracts;
 using SmartLearning.FilesUtils;
 using System.Diagnostics;
 
-namespace CompilerSevice;
+namespace CompilerService;
 
 public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
 {
@@ -164,3 +164,4 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
     private static string Trim(string s, int max)
         => s.Length <= max ? s : s[..max];
 }
+

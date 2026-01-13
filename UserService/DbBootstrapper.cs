@@ -1,8 +1,8 @@
-using Dapper;
+﻿using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace ProgressService
+namespace UserService
 {
     public sealed class DbBootstrapper : IDbBootstrapper
     {
@@ -34,3 +34,4 @@ namespace ProgressService
         }
     }
 }
+

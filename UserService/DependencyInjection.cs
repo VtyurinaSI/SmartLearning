@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using System.Data;
 
-namespace ProgressService
+namespace UserService
 {
     public static class DependencyInjection
     {
@@ -22,3 +22,4 @@ namespace ProgressService
         }
     }
 }
+

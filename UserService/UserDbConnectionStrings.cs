@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
-namespace ProgressService
+namespace UserService
 {
     public static class UserDbConnectionStrings
     {
@@ -22,3 +22,4 @@ namespace ProgressService
         }
     }
 }
+

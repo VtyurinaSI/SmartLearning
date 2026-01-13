@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OrchestrPatterns.Application.Consumers;
@@ -58,7 +58,7 @@ namespace OrchestrPatterns.Application
             {
                 x.AddConsumer<ReviewFinishedConsumer>();
                 x.AddConsumer<ReviewFailedConsumer>();
-                x.AddConsumer<CompileFinishedConsumers>();
+                x.AddConsumer<CompileFinishedConsumer>();
                 x.AddConsumer<CompileFailedConsumer>();
                 x.AddConsumer<TestsFinishedConsumer>();
                 x.AddConsumer<TestsFailedConsumer>();
@@ -84,3 +84,4 @@ namespace OrchestrPatterns.Application
         }
     }
 }
+
