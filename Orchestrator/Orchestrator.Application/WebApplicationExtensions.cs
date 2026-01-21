@@ -28,7 +28,7 @@ namespace Orchestrator.Application
             });
 
             var orc = app.MapGroup("/orc");
-            orc.MapPost("/check", async (CheckRequestHandler handler, StartChecking dto, CancellationToken ct) =>
+            orc.MapPost("/check", async (CheckRequestHandler handler, StartCheckRequest dto, CancellationToken ct) =>
                 await handler.HandleAsync(dto, ct));
         }
     }

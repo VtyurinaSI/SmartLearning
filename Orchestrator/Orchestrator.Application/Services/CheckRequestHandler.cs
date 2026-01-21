@@ -26,10 +26,8 @@ namespace Orchestrator.Application.Services
             _timeouts = timeouts.Value;
         }
 
-        public async Task<IResult> HandleAsync(StartChecking dto, CancellationToken ct)
+        public async Task<IResult> HandleAsync(StartCheckRequest dto, CancellationToken ct)
         {
-            var id = dto.CorrelationId == Guid.Empty ? NewId.NextGuid() : dto.CorrelationId;
-
             var exists = await _patterns.TaskExistsAsync(dto.TaskId, ct);
             if (exists == false)
                 return Results.NotFound($"Задание с id {dto.TaskId} не найдено.");
@@ -40,7 +38,10 @@ namespace Orchestrator.Application.Services
             if (string.IsNullOrWhiteSpace(taskName))
                 taskName = $"task {dto.TaskId}";
 
-            await _bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
+            var correlationId = NewId.NextGuid();
+            var start = new StartChecking(correlationId, dto.UserId, dto.TaskId, taskName);
+            await _bus.Publish(start, ct);
+            /*await _bus.Publish(new CompileRequested(id, dto.UserId, dto.TaskId), ct);
 
             var (okCompile, compilRes) = await _hub.WaitAsync(id, TimeSpan.FromMinutes(_timeouts.CompileMinutes), ct);
             await Task.Delay(_timeouts.PostCompileDelayMs, ct);
@@ -90,12 +91,8 @@ namespace Orchestrator.Application.Services
             }
 
             await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, true, id, true, true, compilRes, testRes, reviewRes), ct);
-            return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, taskName, id,
-                true,
-                true,
-                true, compilRes,
-                true, testRes,
-                true, reviewRes));
+            */
+            return Results.Accepted(/*$"/orc/check/{correlationId}", new { correlationId }*/);
         }
     }
 }

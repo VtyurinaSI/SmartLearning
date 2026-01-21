@@ -32,6 +32,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
         Initially(
             When(CheckRequestedEvent)
                 .Then(ctx => ctx.Saga.Results = new(ctx.Message.UserId, ctx.Message.TaskId, ctx.Message.TaskName))
+                .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .ThenAsync(ctx => ctx.Publish(new CompileRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId)))
                 .TransitionTo(Compiling)
         );
@@ -41,25 +42,41 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         During(Compiling,
              When(CodeCompiledEvent)
-             .Then(ctx =>
-             {
-                 ctx.Saga.Results.CompileMsg = ctx.Message.Result;
-                 ctx.Saga.Results.IsCompiledSuccess = true;
-             })
-             .TransitionTo(Testing),
+              .Then(ctx =>
+              {
+                  ctx.Saga.Results.CompileMsg = ctx.Message.Result;
+                  ctx.Saga.Results.IsCompiledSuccess = true;
+              })
+              //.ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+              .TransitionTo(Testing),
 
              When(CompilationFailedEvent)
-                 .Then(ctx => ctx.Saga.Results.CompileMsg = ctx.Message.Result)
-                 .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
-                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
+                  .Then(ctx => ctx.Saga.Results.CompileMsg = ctx.Message.Result)
+                  .Then(ctx =>
+                  {
+                      ctx.Saga.Results.IsCheckingFinished = true;
+                      ctx.Saga.Results.CheckResult = false;
+                  })
+                  .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                  .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
              When(CompileTimeoutEvent)
-             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
-                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
+             .Then(ctx =>
+             {
+                 ctx.Saga.Results.IsCheckingFinished = true;
+                 ctx.Saga.Results.CheckResult = false;
+             })
+              .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                  .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
              When(CancelEvent)
-             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
-                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
+             .Then(ctx =>
+             {
+                 ctx.Saga.Results.IsCheckingFinished = true;
+                 ctx.Saga.Results.CheckResult = false;
+             })
+              .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                  .TransitionTo(Canceled).Then(SetCanceled).Finalize()
          );
 
         WhenEnter(Testing, x => x.Then(SetTesting).ThenAsync(ctx =>
@@ -72,18 +89,34 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
                         ctx.Saga.Results.TestMsg = ctx.Message.Result;
                         ctx.Saga.Results.IsTestedSuccess = true;
                     })
+                //.ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Reviewing),
 
             When(TestsFailedEvent)
             .Then(ctx => ctx.Saga.Results.TestMsg = ctx.Message.Result)
+            .Then(ctx =>
+            {
+                ctx.Saga.Results.IsCheckingFinished = true;
+                ctx.Saga.Results.CheckResult = false;
+            })
             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(TestsTimeoutEvent)
+                .Then(ctx =>
+                {
+                    ctx.Saga.Results.IsCheckingFinished = true;
+                    ctx.Saga.Results.CheckResult = false;
+                })
                 .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(CancelEvent)
+                .Then(ctx =>
+                {
+                    ctx.Saga.Results.IsCheckingFinished = true;
+                    ctx.Saga.Results.CheckResult = false;
+                })
                 .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
@@ -98,19 +131,37 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
             {
                 ctx.Saga.Results.ReviewMsg = ctx.Message.Result;
                 ctx.Saga.Results.IsReviewedSucces = true;
+                ctx.Saga.Results.IsCheckingFinished = true;
+                ctx.Saga.Results.CheckResult = true;
             })
+            .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Passed).Then(SetPassed).Finalize(),
 
             When(ReviewFailedEvent)
             .Then(ctx => ctx.Saga.Results.ReviewMsg = ctx.Message.Result)
+            .Then(ctx =>
+            {
+                ctx.Saga.Results.IsCheckingFinished = true;
+                ctx.Saga.Results.CheckResult = false;
+            })
             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(ReviewTimeoutEvent)
+            .Then(ctx =>
+            {
+                ctx.Saga.Results.IsCheckingFinished = true;
+                ctx.Saga.Results.CheckResult = false;
+            })
             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(CancelEvent)
+            .Then(ctx =>
+            {
+                ctx.Saga.Results.IsCheckingFinished = true;
+                ctx.Saga.Results.CheckResult = false;
+            })
             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );

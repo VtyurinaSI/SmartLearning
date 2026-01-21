@@ -75,8 +75,22 @@ namespace Gateway
                 using var resp = await pr.GetUserProgressAsync(userId, ct);
                 return await GatewayProxy.ProxyAsync(resp, ct);
             })
+                .Produces(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .RequireAuthorization()
                 .WithSummary("Requesting user progress");
+
+            api.MapGet("/progress/task/{taskId}", async (long taskId, HttpContext ctx, ProgressApi pr, CancellationToken ct) =>
+            {
+                if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
+                    return Results.Unauthorized();
+                using var resp = await pr.GetTaskProgressAsync(userId, taskId, ct);
+                return await GatewayProxy.ProxyAsync(resp, ct);
+            })
+                .Produces(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .RequireAuthorization()
+                .WithSummary("Requesting task progress");
 
             api.MapGet("/users/me", async (UsersApi users, CancellationToken ct) =>
             {
@@ -90,33 +104,17 @@ namespace Gateway
                 [FromQuery] long taskId,
                 IFormFile file,
                 HttpContext ctx,
-                ProgressApi pr,
                 OrchApi orc,
                 GatewayObjectStorageClient minioHandler,
-                PatternsApi patterns,
                 CancellationToken ct) =>
             {
                 if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var userId))
                     return Results.Unauthorized();
-                Guid checkingId = Guid.NewGuid();
                 await using var stream = file.OpenReadStream();
                 await minioHandler.WriteFile(stream, file.FileName, userId, taskId, "load", ct);
 
-                using var titleResp = await patterns.GetTaskTitleAsync(taskId, ct);
-                if (titleResp.StatusCode == HttpStatusCode.NotFound)
-                    return Results.NotFound($"Task {taskId} not found.");
-                if (!titleResp.IsSuccessStatusCode)
-                    return await GatewayProxy.ProxyAsync(titleResp, ct);
-
-                var taskName = await titleResp.Content.ReadAsStringAsync(ct);
-                if (string.IsNullOrWhiteSpace(taskName))
-                    taskName = $"task {taskId}";
-
-                using var resp = await orc.StartCheckAsync(new StartChecking(checkingId, userId, taskId, taskName), ct);
-                if (!resp.IsSuccessStatusCode)
-                    return await GatewayProxy.ProxyAsync(resp, ct);
-
-                return Results.Accepted($"/api/orc/check/{checkingId}", new { correlationId = checkingId });
+                using var resp = await orc.StartCheckAsync(new StartCheckRequest(userId, taskId), ct);
+                return await GatewayProxy.ProxyAsync(resp, ct);
             })
                 .DisableAntiforgery()
                 .RequireAuthorization()
