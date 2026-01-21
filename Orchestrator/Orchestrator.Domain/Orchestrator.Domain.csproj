@@ -13,4 +13,8 @@
     <PackageReference Include="stateless" Version="5.18.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\SmartLearning.Contracts\SmartLearning.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

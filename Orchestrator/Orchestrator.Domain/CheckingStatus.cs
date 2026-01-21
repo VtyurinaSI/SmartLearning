@@ -2,7 +2,6 @@
 {
     public enum CheckingStatus
     {
-        Created,
         Compiling,
         Compiled,
         Testing,

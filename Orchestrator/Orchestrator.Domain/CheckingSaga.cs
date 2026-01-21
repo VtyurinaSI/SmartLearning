@@ -1,20 +1,31 @@
 ﻿using MassTransit;
+using SmartLearning.Contracts;
 
 namespace Orchestrator.Domain
 {
     public class CheckingSaga : SagaStateMachineInstance
     {
+        public CheckingData Results { get; set; } = default!;
+
+        public UpdateProgress MakeUpdateMessage() => 
+            new(Results.UserId, 
+                Results.TaskId, 
+                Results.TaskName, 
+                Results.IsCompiledSuccess,
+                Results.IsTestedSuccess, 
+                Results.IsReviewedSucces,
+                CorrelationId,
+                Results.IsCheckingFinished,
+                Results.CheckResult, 
+                Results.CompileMsg, 
+                Results.TestMsg,
+                Results.ReviewMsg);
         public Guid CorrelationId { get; set; }
 
         public string CurrentState { get; set; } = default!;
 
-        public CheckingStatus Status { get; set; } = CheckingStatus.Created;
+        public CheckingStatus Status { get; set; } = CheckingStatus.Compiling;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? CompletedAt { get; set; }
-        public Guid? ReviewTimeoutTokenId { get; set; }
-        public Guid UserId { get; set; }
-        public long TaskId { get; set; }
     }
 }
 

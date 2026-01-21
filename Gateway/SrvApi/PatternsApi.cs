@@ -24,6 +24,18 @@ sealed class PatternsApi
         return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
     }
 
+    public Task<HttpResponseMessage> GetMetaAsync(long taskId, CancellationToken ct)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/meta?taskId={taskId}");
+        return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+    }
+
+    public Task<HttpResponseMessage> GetTaskTitleAsync(long taskId, CancellationToken ct)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/task_title?taskId={taskId}");
+        return _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+    }
+
     public Task<HttpResponseMessage> GetTaskAsync(long taskId, CancellationToken ct)
     {
         var req = new HttpRequestMessage(HttpMethod.Get, $"/task?taskId={taskId}");

@@ -1,5 +1,6 @@
 ﻿using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Orchestrator.Application.Services;
 using SmartLearning.Contracts;
 
 namespace Orchestrator.Application

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using SmartLearning.Contracts;
 
-namespace Orchestrator.Application
+namespace Orchestrator.Application.Services
 {
     public sealed class CheckRequestHandler
     {
@@ -47,8 +47,9 @@ namespace Orchestrator.Application
 
             if (!okCompile)
             {
-                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, false, false, false, id, false, compilRes, null, null), ct);
+                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, false, false, false, id, true, false, compilRes, null, null), ct);
                 var progressFailCompile = new UserProgressRow(dto.UserId, dto.TaskId, taskName, id,
+                    true,
                     false,
                     false, compilRes,
                     false, null,
@@ -62,8 +63,9 @@ namespace Orchestrator.Application
 
             if (!okReflection)
             {
-                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, false, false, id, false, compilRes, testRes, null), ct);
+                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, false, false, id, true, false, compilRes, testRes, null), ct);
                 return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, taskName, id,
+                    true,
                     false,
                     true, compilRes,
                     false, testRes,
@@ -78,16 +80,18 @@ namespace Orchestrator.Application
 
             if (!okReview)
             {
-                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, false, id, false, compilRes, testRes, reviewRes), ct);
+                await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, false, id, true, false, compilRes, testRes, reviewRes), ct);
                 return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, taskName, id,
+                    true,
                     false,
                     true, compilRes,
                     true, testRes,
                     false, reviewRes));
             }
 
-            await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, true, id, true, compilRes, testRes, reviewRes), ct);
+            await _bus.Publish(new UpdateProgress(dto.UserId, dto.TaskId, taskName, true, true, true, id, true, true, compilRes, testRes, reviewRes), ct);
             return Results.Ok(new UserProgressRow(dto.UserId, dto.TaskId, taskName, id,
+                true,
                 true,
                 true, compilRes,
                 true, testRes,

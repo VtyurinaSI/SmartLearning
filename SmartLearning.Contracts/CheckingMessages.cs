@@ -1,12 +1,12 @@
-﻿namespace SmartLearning.Contracts
+﻿дnamespace SmartLearning.Contracts
 {
     public record UserCreated(Guid UserId, string Login, string Email);
-    public record UpdateProgress(Guid UserId, long TaskId, string? TaskName, bool IsCompiledSuccess, bool IsTestedSuccess, bool IsReviewedSuccess, Guid? CorrelationId, bool CheckResult, string? CompileMsg, string? TestMsg, string? ReviewMsg);
-    public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId);
+    public record UpdateProgress(Guid UserId, long TaskId, string? TaskName, bool IsCompiledSuccess, bool IsTestedSuccess, bool IsReviewedSuccess, Guid? CorrelationId, bool IsCheckingFinished, bool CheckResult, string? CompileMsg, string? TestMsg, string? ReviewMsg);
+    public record StartChecking(Guid CorrelationId, Guid UserId, long TaskId,string TaskName);
     public record ReceivedForChecking(long TaskId, string OrigCode);
     public record CheckingResults(Guid UserId, Guid CorrelationId, string? CompileRes, string? TestsRes, string? ReviewRes);
 
-    public record UserProgressRow(Guid UserId, long TaskId, string TaskName, Guid? CorrelationId, bool CheckResult,
+    public record UserProgressRow(Guid UserId, long TaskId, string TaskName, Guid? CorrelationId, bool IsCheckingFinished, bool CheckResult,
                                   bool CompileStat, string? CompileMsg,
                                   bool TestStat, string? TestMsg,
                                   bool ReviewStat, string? ReviewMsg);

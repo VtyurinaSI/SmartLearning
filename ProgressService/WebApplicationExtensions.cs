@@ -34,18 +34,43 @@
                         var taskName = string.IsNullOrWhiteSpace(r.TaskName) ? $"task {r.TaskId}" : r.TaskName;
                         if (!r.CompileStat)
                         {
-                            return new InProcessTasks(r.TaskId, taskName, CheckingStage.Compilation.ToString(), r.CompileMsg ?? string.Empty);
+                            return new InProcessTasks(r.TaskId, taskName, CheckingStage.Compilation.ToString(), r.CompileMsg ?? string.Empty, r.IsCheckingFinished ?? false);
                         }
                         if (!r.TestStat)
                         {
-                            return new InProcessTasks(r.TaskId, taskName, CheckingStage.Testing.ToString(), r.TestMsg ?? string.Empty);
+                            return new InProcessTasks(r.TaskId, taskName, CheckingStage.Testing.ToString(), r.TestMsg ?? string.Empty, r.IsCheckingFinished ?? false);
                         }
-                        return new InProcessTasks(r.TaskId, taskName, CheckingStage.Review.ToString(), r.ReviewMsg ?? string.Empty);
+                        return new InProcessTasks(r.TaskId, taskName, CheckingStage.Review.ToString(), r.ReviewMsg ?? string.Empty, r.IsCheckingFinished ?? false);
                     })
                     .ToArray();
 
                 UserProgress prog = new(compl, inp);
                 return Results.Json(prog);
+            });
+
+            app.MapGet("/user_progress/task/{taskId}", async (long taskId, HttpContext ctx, IUserProgressRepository repo, CancellationToken ct) =>
+            {
+                if (!Guid.TryParse(ctx.Request.Headers["X-User-Id"], out var headerUserId))
+                    return Results.Unauthorized();
+
+                var row = await repo.GetTaskProgressAsync(headerUserId, taskId, ct);
+                if (row is null)
+                    return Results.NotFound();
+
+                var taskName = string.IsNullOrWhiteSpace(row.TaskName) ? $"task {row.TaskId}" : row.TaskName;
+                var result = new TaskProgress(
+                    row.TaskId,
+                    taskName,
+                    row.IsCheckingFinished ?? false,
+                    row.CheckResult ?? false,
+                    row.CompileStat,
+                    row.CompileMsg,
+                    row.TestStat,
+                    row.TestMsg,
+                    row.ReviewStat,
+                    row.ReviewMsg);
+
+                return Results.Json(result);
             });
         }
     }

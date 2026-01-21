@@ -17,6 +17,12 @@ public static class WebApplicationExtensions
             return meta is null ? Results.NotFound() : Results.Json(meta);
         });
 
+        app.MapGet("/task_title", async (long taskId, TaskCatalogService catalog, CancellationToken ct) =>
+        {
+            var meta = await catalog.GetMetaAsync(taskId, ct);
+            return meta is null ? Results.NotFound() : Results.Text(meta.TaskTitle);
+        });
+
         app.MapGet("/tasks", async (TaskCatalogService catalog, CancellationToken ct) =>
         {
             var items = await catalog.GetTaskListAsync(ct);

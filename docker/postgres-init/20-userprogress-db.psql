@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.progress (
   task_name      text,
 
   correlation_id uuid    NULL,
+  is_checking_finished boolean NOT NULL DEFAULT false,
   check_result   boolean NOT NULL DEFAULT false,
   compile_stat   boolean NOT NULL DEFAULT false,
   test_stat      boolean NOT NULL DEFAULT false,

@@ -1,6 +1,4 @@
 ﻿using MassTransit;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Orchestrator.Domain;
 using SmartLearning.Contracts;
 
@@ -8,47 +6,15 @@ namespace Orchestrator.Application;
 
 public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 {
-
-    public State Created { get; private set; } = default!;
-    public State Compiling { get; private set; } = default!;
-    public State Compiled { get; private set; } = default!;
-    public State Testing { get; private set; } = default!;
-    public State Tested { get; private set; } = default!;
-    public State Reviewing { get; private set; } = default!;
-    public State Reviewed { get; private set; } = default!;
-    public State Canceled { get; private set; } = default!;
-    public State Failed { get; private set; } = default!;
-    public State Passed { get; private set; } = default!;
-
-
-    public Event<StartCompile> StartCompileEvent { get; private set; } = default!;
-    public Event<StartTests> StartTestsEvent { get; private set; } = default!;
-    public Event<StartReview> StartReviewEvent { get; private set; } = default!;
-    public Event<Cancel> CancelEvent { get; private set; } = default!;
-
-    public Event<CompilationFinished> CodeCompiledEvent { get; private set; } = default!;
-    public Event<CompilationFailed> CompilationFailedEvent { get; private set; } = default!;
-    public Event<CompileTimeout> CompileTimeoutEvent { get; private set; } = default!;
-
-    public Event<TestsFinished> TestsFinishedEvent { get; private set; } = default!;
-    public Event<TestsFailed> TestsFailedEvent { get; private set; } = default!;
-    public Event<TestsTimeout> TestsTimeoutEvent { get; private set; } = default!;
-
-    public Event<ReviewFinished> ReviewFinishedEvent { get; private set; } = default!;
-    public Event<ReviewFailed> ReviewFailedEvent { get; private set; } = default!;
-    public Schedule<CheckingSaga, ReviewTimeout> ReviewTmo { get; private set; } = default!;
-    public CheckingStateMachineMt(IOptions<CheckTimeoutOptions> options)
+    public CheckingStateMachineMt()
     {
         InstanceState(x => x.CurrentState);
-        Schedule(() => ReviewTmo, x => x.ReviewTimeoutTokenId, s =>
-        {
-            s.Delay = TimeSpan.FromMinutes(options.Value.ReviewMinutes);
-            s.Received = r => r.CorrelateById(m => m.Message.CorrelationId);
-        });
 
-        Event(() => StartCompileEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
-        Event(() => StartTestsEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
-        Event(() => StartReviewEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
+        Event(() => CheckRequestedEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
+
+        //Event(() => StartCompileEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
+        //Event(() => StartTestsEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
+        //Event(() => StartReviewEvent, x => { x.CorrelateById(m => m.Message.CorrelationId); x.SelectId(m => m.Message.CorrelationId); });
         Event(() => CancelEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
         Event(() => CodeCompiledEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
@@ -61,132 +27,95 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         Event(() => ReviewFinishedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
         Event(() => ReviewFailedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
-
+        Event(() => ReviewTimeoutEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
         Initially(
-            When(StartCompileEvent)
-                .Then(ctx =>
-                {
-                    ctx.Saga.UserId = ctx.Message.UserId;
-                    ctx.Saga.TaskId = ctx.Message.TaskId;
-                    ctx.Saga.Status = CheckingStatus.Created;
-                })
-                .TransitionTo(Compiling).Then(SetCompiling),
-
-            When(StartTestsEvent)
-                .Then(SetCreated)
-                .TransitionTo(Testing).Then(SetTesting),
-
-            When(StartReviewEvent)
-                .Then(SetCreated)
-                .TransitionTo(Reviewing).Then(SetReviewing)
-
+            When(CheckRequestedEvent)
+                .Then(ctx => ctx.Saga.Results = new(ctx.Message.UserId, ctx.Message.TaskId, ctx.Message.TaskName))
+                .ThenAsync(ctx => ctx.Publish(new CompileRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId)))
+                .TransitionTo(Compiling)
         );
 
 
-        During(Created,
-            When(StartCompileEvent)
-                .Then(ctx =>
-                {
-                    ctx.Saga.UserId = ctx.Message.UserId;
-                    ctx.Saga.TaskId = ctx.Message.TaskId;
-                })
-                .TransitionTo(Compiling).Then(SetCompiling),
-
-            When(StartTestsEvent)
-                .TransitionTo(Testing).Then(SetTesting),
-
-            When(StartReviewEvent)
-                .TransitionTo(Reviewing).Then(SetReviewing)
-
-        );
-
+        WhenEnter(Compiling, x => x.Then(SetCompiling));
 
         During(Compiling,
-            Ignore(StartCompileEvent),
+             When(CodeCompiledEvent)
+             .Then(ctx =>
+             {
+                 ctx.Saga.Results.CompileMsg = ctx.Message.Result;
+                 ctx.Saga.Results.IsCompiledSuccess = true;
+             })
+             .TransitionTo(Testing),
 
-            When(CodeCompiledEvent)
-                .TransitionTo(Compiled).Then(SetCompiled)
-        );
+             When(CompilationFailedEvent)
+                 .Then(ctx => ctx.Saga.Results.CompileMsg = ctx.Message.Result)
+                 .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
+             When(CompileTimeoutEvent)
+             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
-        During(Compiled,
-            When(StartTestsEvent)
-                .TransitionTo(Testing).Then(SetTesting),
+             When(CancelEvent)
+             .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
+         );
 
-            When(StartReviewEvent)
-                .TransitionTo(Reviewing).Then(SetReviewing),
-
-            When(CancelEvent)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
-        );
-
+        WhenEnter(Testing, x => x.Then(SetTesting).ThenAsync(ctx =>
+           ctx.Publish(new TestRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId))));
 
         During(Testing,
-            Ignore(StartTestsEvent),
-
             When(TestsFinishedEvent)
-                .TransitionTo(Tested).Then(SetTested),
+                .Then(ctx =>
+                    {
+                        ctx.Saga.Results.TestMsg = ctx.Message.Result;
+                        ctx.Saga.Results.IsTestedSuccess = true;
+                    })
+                .TransitionTo(Reviewing),
 
             When(TestsFailedEvent)
+            .Then(ctx => ctx.Saga.Results.TestMsg = ctx.Message.Result)
+            .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(TestsTimeoutEvent)
+                .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(CancelEvent)
+                .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
 
-        During(Tested,
-            When(StartReviewEvent)
-                .TransitionTo(Reviewing).Then(SetReviewing),
+        WhenEnter(Reviewing, x => x.Then(SetReviewing)
+            .ThenAsync(async ctx => await ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId, ctx.Saga.Results.TaskName ?? "Any pattern"))));
 
-
-            When(CancelEvent)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
-        );
-
-        WhenEnter(Testing, x => x
-            .ThenAsync(ctx => ctx.Publish(new TestRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId)))
-        );
-
-        WhenEnter(Reviewing, x => x
-            .ThenAsync(async ctx =>
-            {
-                var provider = ctx.GetPayload<IServiceProvider>();
-                var patterns = provider.GetRequiredService<PatternServiceClient>();
-                var patternName = await patterns.GetPatternTitleAsync(ctx.Saga.TaskId, ctx.CancellationToken);
-                if (string.IsNullOrWhiteSpace(patternName))
-                    patternName = string.Empty;
-                await ctx.Publish(new ReviewRequested(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId, patternName));
-            })
-            .Schedule(ReviewTmo, ctx => new ReviewTimeout(ctx.Saga.CorrelationId, ctx.Saga.UserId, ctx.Saga.TaskId))
-        );
         During(Reviewing,
-            Ignore(StartReviewEvent),
             When(ReviewFinishedEvent)
-                .Unschedule(ReviewTmo)
-                .TransitionTo(Reviewed).Then(SetReviewed),
+            .Then(ctx =>
+            {
+                ctx.Saga.Results.ReviewMsg = ctx.Message.Result;
+                ctx.Saga.Results.IsReviewedSucces = true;
+            })
+                .TransitionTo(Passed).Then(SetPassed).Finalize(),
 
             When(ReviewFailedEvent)
-                .Unschedule(ReviewTmo)
+            .Then(ctx => ctx.Saga.Results.ReviewMsg = ctx.Message.Result)
+            .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
-            When(ReviewTmo.Received)
+            When(ReviewTimeoutEvent)
+            .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Failed).Then(SetFailed).Finalize(),
 
             When(CancelEvent)
-                .Unschedule(ReviewTmo)
+            .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
                 .TransitionTo(Canceled).Then(SetCanceled).Finalize()
         );
 
 
-        During(Reviewed,
-            When(CancelEvent)
-                .TransitionTo(Canceled).Then(SetCanceled).Finalize()
-        );
 
 
         During(Canceled, Ignore(CancelEvent));
@@ -194,33 +123,53 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
         SetCompletedWhenFinalized();
     }
 
+    #region states
 
-    static void SetCreated(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Created;
+    public State Compiling { get; private set; } = default!;
+
+    public State Testing { get; private set; } = default!;
+
+    public State Reviewing { get; private set; } = default!;
+
+    public State Passed { get; private set; } = default!;
+    public State Failed { get; private set; } = default!;
+    public State Canceled { get; private set; } = default!;
+    #endregion
+
+
+    #region events
+    public Event<StartChecking> CheckRequestedEvent { get; private set; } = default!;
+
+    //public Event<CompileRequested> StartCompileEvent { get; private set; } = default!;
+    public Event<CompilationFinished> CodeCompiledEvent { get; private set; } = default!;
+    public Event<CompilationFailed> CompilationFailedEvent { get; private set; } = default!;
+    public Event<CompileTimeout> CompileTimeoutEvent { get; private set; } = default!;
+
+    //public Event<TestRequested> StartTestsEvent { get; private set; } = default!;
+    public Event<TestsFailed> TestsFailedEvent { get; private set; } = default!;
+    public Event<TestsFinished> TestsFinishedEvent { get; private set; } = default!;
+    public Event<TestsTimeout> TestsTimeoutEvent { get; private set; } = default!;
+
+    //public Event<ReviewRequested> StartReviewEvent { get; private set; } = default!;
+    public Event<ReviewFailed> ReviewFailedEvent { get; private set; } = default!;
+    public Event<ReviewFinished> ReviewFinishedEvent { get; private set; } = default!;
+    public Event<ReviewTimeout> ReviewTimeoutEvent { get; private set; } = default!;
+
+    public Event<Cancel> CancelEvent { get; private set; } = default!;
+    #endregion
+
+    static void SetCanceled(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Canceled;
     static void SetCompiling(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Compiling;
-    static void SetCompiled(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Compiled;
-    static void SetTesting(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Testing;
-    static void SetTested(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Tested;
+
+    static void SetFailed(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Failed;
+
+    static void SetPassed(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Passed;
+
+
     static void SetReviewing(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Reviewing;
-    static void SetReviewed(BehaviorContext<CheckingSaga> ctx)
-    {
-        ctx.Saga.Status = CheckingStatus.Reviewed;
-        ctx.Saga.CompletedAt ??= DateTime.UtcNow;
-    }
-    static void SetCanceled(BehaviorContext<CheckingSaga> ctx)
-    {
-        ctx.Saga.Status = CheckingStatus.Canceled;
-        ctx.Saga.CompletedAt ??= DateTime.UtcNow;
-    }
-    static void SetFailed(BehaviorContext<CheckingSaga> ctx)
-    {
-        ctx.Saga.Status = CheckingStatus.Failed;
-        ctx.Saga.CompletedAt ??= DateTime.UtcNow;
-    }
-    static void SetPassed(BehaviorContext<CheckingSaga> ctx)
-    {
-        ctx.Saga.Status = CheckingStatus.Passed;
-        ctx.Saga.CompletedAt ??= DateTime.UtcNow;
-    }
+
+
+    static void SetTesting(BehaviorContext<CheckingSaga> ctx) => ctx.Saga.Status = CheckingStatus.Testing;
 }
 
 

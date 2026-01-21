@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orchestrator.Application.Consumers;
+using Orchestrator.Application.Services;
 using Orchestrator.Domain;
 
 namespace Orchestrator.Application

@@ -23,17 +23,19 @@ namespace ProgressService
                 message.IsTestedSuccess,
                 message.IsReviewedSuccess,
                 message.CorrelationId ?? correlationId,
+                message.IsCheckingFinished,
                 message.CheckResult,
                 message.CompileMsg,
                 message.TestMsg,
                 message.ReviewMsg,
                 ct);
-            _log.LogInformation("Progress updated for user {UserId}, task {TaskId}: Compile={Compile}, Test={Test}, Review={Review}, Result={Result}",
+            _log.LogInformation("Progress updated for user {UserId}, task {TaskId}: Compile={Compile}, Test={Test}, Review={Review}, Finished={Finished}, Result={Result}",
                 message.UserId,
                 message.TaskId,
                 message.IsCompiledSuccess,
                 message.IsTestedSuccess,
                 message.IsReviewedSuccess,
+                message.IsCheckingFinished,
                 message.CheckResult
             );
         }
