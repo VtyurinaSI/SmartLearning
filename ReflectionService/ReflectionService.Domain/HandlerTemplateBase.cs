@@ -1,4 +1,4 @@
-﻿using ReflectionService.Domain.ManifestModel;
+using ReflectionService.Domain.ManifestModel;
 using System.Text.Json;
 
 namespace ReflectionService.Domain

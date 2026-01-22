@@ -29,7 +29,7 @@ public sealed class FindInterfacesHandler : HandlerTemplateBase<FindInterfacesAr
         var res = results.Types;
         if (res == null || res.Length == 0)
         {
-            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Èíòåðôåéñû íå íàéäåíû"));
+            context.StepResults.Add(new(step.Id, step.Operation, false, FailureSeverity.Error, "Ð˜Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÑ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹"));
             return;
         }
 

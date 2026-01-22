@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using ReflectionService.Domain.ManifestModel;
 using ReflectionService.Domain.Steps.FindTypesStep;

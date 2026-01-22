@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ReflectionService.Domain.ManifestModel;
 using System.Runtime.CompilerServices;
 

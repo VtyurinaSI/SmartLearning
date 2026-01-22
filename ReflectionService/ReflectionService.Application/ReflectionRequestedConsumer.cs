@@ -1,4 +1,4 @@
-﻿using MassTransit;
+using MassTransit;
 using ReflectionService.Domain;
 using ReflectionService.Domain.ManifestModel;
 using ReflectionService.Domain.PipelineOfCheck;

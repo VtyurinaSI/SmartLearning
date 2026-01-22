@@ -31,7 +31,7 @@ public sealed class CheckingReportBuilder : ICheckingReportBuilder
                 title = step.Operation;
 
             var passed = result?.Passed ?? false;
-            var status = passed ? "пройден" : "не пройден";
+            var status = passed ? "РїСЂРѕР№РґРµРЅ" : "РЅРµ РїСЂРѕР№РґРµРЅ";
 
             sb.Append(i + 1);
             sb.Append(".  ");
@@ -76,7 +76,7 @@ public sealed class CheckingReportBuilder : ICheckingReportBuilder
         for (var i = 0; i < context.StepResults.Count; i++)
         {
             var r = context.StepResults[i];
-            var status = r.Passed ? "пройден" : "не пройден";
+            var status = r.Passed ? "РїСЂРѕР№РґРµРЅ" : "РЅРµ РїСЂРѕР№РґРµРЅ";
 
             sb.Append(i + 1);
             sb.Append(".  ");

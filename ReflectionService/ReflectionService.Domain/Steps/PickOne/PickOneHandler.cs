@@ -1,4 +1,4 @@
-﻿using ReflectionService.Domain.ManifestModel;
+using ReflectionService.Domain.ManifestModel;
 
 namespace ReflectionService.Domain.Steps.PickOne;
 
