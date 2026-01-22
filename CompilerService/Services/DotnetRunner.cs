@@ -2,7 +2,7 @@
 
 namespace CompilerService.Services;
 
-public sealed class DotnetRunner
+public class DotnetRunner
 {
     public async Task<DotnetResult> RunAsync(string workingDir, string args, CancellationToken ct)
     {
@@ -26,5 +26,5 @@ public sealed class DotnetRunner
     }
 }
 
-public sealed record DotnetResult(int ExitCode, string StdOut, string StdErr);
+public record DotnetResult(int ExitCode, string StdOut, string StdErr);
 

@@ -22,6 +22,7 @@ namespace SmartLearning.Contracts
     public record TestRequested(Guid CorrelationId, Guid UserId, long TaskId);
     public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId, string? Result);
     public record CompilationFailed(Guid CorrelationId, Guid UserId, long TaskId, string? Result);
+    public record WrongProjectStructure(Guid CorrelationId, Guid UserId, long TaskId, string? Message);
     public record CompileTimeout(Guid CorrelationId, Guid UserId, long TaskId);
     public record TestsFinished(Guid CorrelationId, Guid UserId, long TaskId, string? Result);
     public record TestsFailed(Guid CorrelationId, Guid UserId, long TaskId, string? Result);

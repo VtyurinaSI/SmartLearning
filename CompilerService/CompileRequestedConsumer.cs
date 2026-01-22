@@ -1,7 +1,6 @@
 ﻿using CompilerService.Services;
 using MassTransit;
 using SmartLearning.Contracts;
-using SmartLearning.FilesUtils;
 using System.Diagnostics;
 
 namespace CompilerService;
@@ -14,6 +13,8 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
     private readonly DotnetRunner _dotnet;
     private readonly BuildOutputUploader _uploader;
     private readonly WorkDirCleaner _cleaner;
+    private readonly CsprojParser _csprojPaser;
+    private readonly DependensyChecker _depChecker;
 
     public CompileRequestedConsumer(
         ILogger<CompileRequestedConsumer> log,
@@ -21,7 +22,9 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
         BuildTargetLocator targetLocator,
         DotnetRunner dotnet,
         BuildOutputUploader uploader,
-        WorkDirCleaner cleaner)
+        WorkDirCleaner cleaner,
+        CsprojParser csprojPaser,
+        DependensyChecker depChecker)
     {
         _log = log;
         _sourceLoader = sourceLoader;
@@ -29,6 +32,8 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
         _dotnet = dotnet;
         _uploader = uploader;
         _cleaner = cleaner;
+        _csprojPaser = csprojPaser;
+        _depChecker = depChecker;
     }
 
     public async Task Consume(ConsumeContext<CompileRequested> context)
@@ -69,21 +74,42 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
 
             var targets = _targetLocator.FindTargets(extractDir);
 
-            if (targets.Solutions.Count == 0 && targets.Projects.Count == 0)
-                throw new InvalidOperationException("No solution or project files found");
+            if (targets.Projects.Count == 0)
+            {
+                await context.Publish(new WrongProjectStructure(msg.CorrelationId,
+                msg.UserId,
+                msg.TaskId,
+                "Не обнаружен проект для сборки"));
+                return;
+            }
 
             if (targets.Solutions.Count > 0)
                 _log.LogInformation("Solutions: {List}", string.Join(" | ", targets.Solutions.Take(20)));
 
             if (targets.Projects.Count > 0)
-                _log.LogInformation("Projects: {List}", string.Join(" | ", targets.Projects.Take(20)));
 
-            var target = _targetLocator.FindBuildTarget(extractDir);
-            var targetDir = Path.GetDirectoryName(target)!;
+                _log.LogInformation("Projects: {List}", string.Join(" | ", targets.Projects.Take(20)));
+            string? targetProg = null;
+            string? warn = null;
+            if (targets.Projects.Count > 1)
+                (targetProg, warn) = _depChecker.SelectTargetProjectByInDegree(targets.Projects);
+            else targetProg = targets.Projects[0];
+            if (targetProg == null)
+            {
+                await context.Publish(new WrongProjectStructure(msg.CorrelationId,
+                msg.UserId,
+                msg.TaskId,
+                "Не обнаружен проект для сборки"));
+                return;
+            }
+            var assemblyName = _csprojPaser.GetAssemblyName(targetProg) + ".dll";
+
+            var target = Path.GetFileName(targetProg)!;//_targetLocator.FindBuildTarget(extractDir);
+            var targetDir = Path.GetDirectoryName(targetProg)!;//Path.GetDirectoryName(target)!;
 
             _log.LogInformation("Selected build target: {Target}. TargetDir={TargetDir}", target, targetDir);
 
-            var outDir = Path.Combine(workDir, "_out");
+            var outDir = Path.Combine(targetDir, "_out");
             Directory.CreateDirectory(outDir);
 
             var swRestore = Stopwatch.StartNew();
@@ -138,12 +164,13 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
             }
 
             await _uploader.UploadBuildOutputAsync(msg.UserId, msg.TaskId, outDir, context.CancellationToken);
-
+            string textResult = warn is null ? Trim(buildLog, 20000) : Trim(buildLog, 20000) + Environment.NewLine + warn;
             await context.Publish(new CompilationFinished(
                 msg.CorrelationId,
                 msg.UserId,
                 msg.TaskId,
-                Trim(buildLog, 20000)));
+                textResult, 
+                assemblyName));
         }
         catch (Exception ex)
         {
@@ -153,7 +180,7 @@ public sealed class CompileRequestedConsumer : IConsumer<CompileRequested>
                 msg.CorrelationId,
                 msg.UserId,
                 msg.TaskId,
-                ex.ToString()));
+                ex.Message));
         }
         finally
         {

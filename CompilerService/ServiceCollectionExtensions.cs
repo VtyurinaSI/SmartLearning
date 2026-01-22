@@ -36,6 +36,8 @@ namespace CompilerService
             services.AddTransient<DotnetRunner>();
             services.AddTransient<BuildOutputUploader>();
             services.AddTransient<WorkDirCleaner>();
+            services.AddTransient<CsprojParser>();
+            services.AddTransient<DependensyChecker>();
             return services;
         }
 
