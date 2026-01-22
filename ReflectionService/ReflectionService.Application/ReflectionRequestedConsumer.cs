@@ -200,8 +200,10 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
             try
             {
                 if (dll.Contains(asName))
+                {
                     AssemblyName.GetAssemblyName(dll);
-                return dll;
+                    return dll;
+                }
             }
             catch (BadImageFormatException)
             {
