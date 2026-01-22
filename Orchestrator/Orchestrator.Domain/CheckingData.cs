@@ -14,6 +14,7 @@ namespace Orchestrator.Domain
         public string? CompileMsg { get; set; }
         public string? TestMsg { get; set; }
         public string? ReviewMsg { get; set; }
+        public string? AssemblyName { get; set; }
 
     }
 }

@@ -19,6 +19,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
 
         Event(() => CodeCompiledEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
         Event(() => CompilationFailedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
+        Event(() => WrongProjectStructureEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
         Event(() => CompileTimeoutEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
 
         Event(() => TestsFinishedEvent, x => x.CorrelateById(m => m.Message.CorrelationId));
@@ -46,12 +47,23 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
               {
                   ctx.Saga.Results.CompileMsg = ctx.Message.Result;
                   ctx.Saga.Results.IsCompiledSuccess = true;
+                  ctx.Saga.Results.AssemblyName = ctx.Message.AssemblyNameWithExtension;
               })
               //.ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
               .TransitionTo(Testing),
 
              When(CompilationFailedEvent)
                   .Then(ctx => ctx.Saga.Results.CompileMsg = ctx.Message.Result)
+                  .Then(ctx =>
+                  {
+                      ctx.Saga.Results.IsCheckingFinished = true;
+                      ctx.Saga.Results.CheckResult = false;
+                  })
+                  .ThenAsync(ctx => ctx.Publish(ctx.Saga.MakeUpdateMessage()))
+                  .TransitionTo(Failed).Then(SetFailed).Finalize(),
+
+             When(WrongProjectStructureEvent)
+                  .Then(ctx => ctx.Saga.Results.CompileMsg = ctx.Message.Message)
                   .Then(ctx =>
                   {
                       ctx.Saga.Results.IsCheckingFinished = true;
@@ -80,7 +92,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
          );
 
         WhenEnter(Testing, x => x.Then(SetTesting).ThenAsync(ctx =>
-           ctx.Publish(new TestRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId))));
+           ctx.Publish(new TestRequested(ctx.Saga.CorrelationId, ctx.Saga.Results.UserId, ctx.Saga.Results.TaskId, ctx.Saga.Results.AssemblyName!))));
 
         During(Testing,
             When(TestsFinishedEvent)
@@ -194,6 +206,7 @@ public class CheckingStateMachineMt : MassTransitStateMachine<CheckingSaga>
     //public Event<CompileRequested> StartCompileEvent { get; private set; } = default!;
     public Event<CompilationFinished> CodeCompiledEvent { get; private set; } = default!;
     public Event<CompilationFailed> CompilationFailedEvent { get; private set; } = default!;
+    public Event<WrongProjectStructure> WrongProjectStructureEvent { get; private set; } = default!;
     public Event<CompileTimeout> CompileTimeoutEvent { get; private set; } = default!;
 
     //public Event<TestRequested> StartTestsEvent { get; private set; } = default!;

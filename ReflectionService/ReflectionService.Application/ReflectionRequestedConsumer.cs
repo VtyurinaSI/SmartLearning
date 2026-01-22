@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using ReflectionService.Domain;
 using ReflectionService.Domain.ManifestModel;
 using ReflectionService.Domain.PipelineOfCheck;
@@ -64,10 +64,9 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
                 build.FileName,
                 build.DownloadTime.TotalMilliseconds);
 
-            var entryAssemblyPath = FindEntryAssembly(workDir);
-
-            _log.LogInformation("Entry assembly selected: {Assembly}", entryAssemblyPath);
-
+            var entryAssemblyPath = FindEntryAssembly(workDir, context.Message.AssemblyNameWithExtension);
+            _log.LogDebug("Имя сборки: {n}, найденный путь к ней: {з}", context.Message.AssemblyNameWithExtension, entryAssemblyPath);
+            
             var manifestJson = await _patterns.GetManifestAsync(
                 context.Message.TaskId,
                 context.CancellationToken);
@@ -194,13 +193,14 @@ public sealed class ReflectionRequestedConsumer : IConsumer<TestRequested>
         return new SourceStageLoader.StorageDownload(bytes, ctType, name);
     }
 
-    private static string FindEntryAssembly(string root)
+    private static string FindEntryAssembly(string root, string asName)
     {
         foreach (var dll in Directory.GetFiles(root, "*.dll", SearchOption.AllDirectories))
         {
             try
             {
-                AssemblyName.GetAssemblyName(dll);
+                if (dll.Contains(asName))
+                    AssemblyName.GetAssemblyName(dll);
                 return dll;
             }
             catch (BadImageFormatException)

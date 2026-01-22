@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Orchestrator.Application.Consumers;
 using Orchestrator.Application.Services;
 using Orchestrator.Domain;
+using SmartLearning.Contracts;
 
 namespace Orchestrator.Application
 {
@@ -63,6 +64,7 @@ namespace Orchestrator.Application
                 x.AddConsumer<CompileFailedConsumer>();
                 x.AddConsumer<TestsFinishedConsumer>();
                 x.AddConsumer<TestsFailedConsumer>();
+                x.AddConsumer<WrongProjectStructureConsumer>();
                 x.SetKebabCaseEndpointNameFormatter();
 
                 x.AddSagaStateMachine<CheckingStateMachineMt, CheckingSaga>()

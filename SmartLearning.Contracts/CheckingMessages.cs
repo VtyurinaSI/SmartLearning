@@ -1,4 +1,4 @@
-namespace SmartLearning.Contracts
+﻿namespace SmartLearning.Contracts
 {
     public record UserCreated(Guid UserId, string Login, string Email);
     public record StartCheckRequest(Guid UserId, long TaskId);
@@ -19,8 +19,8 @@ namespace SmartLearning.Contracts
 
     public record ReviewRequested(Guid CorrelationId, Guid UserId, long TaskId, string PatternName);
     public record CompileRequested(Guid CorrelationId, Guid UserId, long TaskId);
-    public record TestRequested(Guid CorrelationId, Guid UserId, long TaskId);
-    public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId, string? Result);
+    public record TestRequested(Guid CorrelationId, Guid UserId, long TaskId, string AssemblyNameWithExtension);
+    public record CompilationFinished(Guid CorrelationId, Guid UserId, long TaskId, string? Result, string AssemblyNameWithExtension);
     public record CompilationFailed(Guid CorrelationId, Guid UserId, long TaskId, string? Result);
     public record WrongProjectStructure(Guid CorrelationId, Guid UserId, long TaskId, string? Message);
     public record CompileTimeout(Guid CorrelationId, Guid UserId, long TaskId);
